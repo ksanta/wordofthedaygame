@@ -18,8 +18,16 @@ func main() {
 	flag.Parse()
 
 	allDetails := obtainWordOfTheDays(cacheFile)
+	fmt.Println("FYI, the cache file contains", len(allDetails), "words")
 
-	fmt.Println("Cache contains", len(allDetails), "words")
+	wordType := pickRandomWordType()
+	fmt.Printf("Today's word is a %s!\n", wordType)
+
+	wordsByType := filterWordsByType(allDetails, wordType)
+
+	threeRandoms := pickThreeAtRandom(wordsByType)
+
+	playTheGame(threeRandoms)
 }
 
 func obtainWordOfTheDays(cacheFile *string) []model.PageDetails {
@@ -32,7 +40,7 @@ func obtainWordOfTheDays(cacheFile *string) []model.PageDetails {
 	}
 
 	// Read all the words from the cache file
-	allDetails := []model.PageDetails{}
+	var allDetails []model.PageDetails
 	file, err := os.Open(*cacheFile)
 	if err != nil {
 		log.Fatal(err)
