@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/csv"
 	"flag"
 	"fmt"
@@ -8,7 +9,11 @@ import (
 	"github.com/ksanta/wordofthedaygame/scraper"
 	"io"
 	"log"
+	"math/rand"
 	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 func main() {
@@ -16,6 +21,9 @@ func main() {
 	cacheFile := flag.String("cache", "words.cache", "Cache file name")
 	//updateWords := flag.Bool("updateWords", false, "Whether to check web for new words")
 	flag.Parse()
+
+	// Randomise the random number generator
+	rand.Seed(time.Now().Unix())
 
 	allDetails := obtainWordOfTheDays(cacheFile)
 	fmt.Println("FYI, the cache file contains", len(allDetails), "words")
@@ -25,9 +33,65 @@ func main() {
 
 	wordsByType := filterWordsByType(allDetails, wordType)
 
-	threeRandoms := pickThreeAtRandom(wordsByType)
+	threeRandoms := pickSomeAtRandom(wordsByType, 3)
 
 	playTheGame(threeRandoms)
+}
+
+func pickRandomWordType() string {
+	// todo: add "adverb" after some testing
+	wordTypes := []string{"noun", "adjective", "verb"}
+	randomIndex := rand.Intn(len(wordTypes))
+	return wordTypes[randomIndex]
+}
+
+func filterWordsByType(allDetails []model.PageDetails, wordType string) []model.PageDetails {
+	var filteredDetails []model.PageDetails
+	for _, details := range allDetails {
+		if details.WordType == wordType {
+			filteredDetails = append(filteredDetails, details)
+		}
+	}
+	return filteredDetails
+}
+
+func pickSomeAtRandom(wordsByType []model.PageDetails, numberToPick int) []model.PageDetails {
+	chosenRandoms := make([]model.PageDetails, 0, numberToPick)
+	chosenWords := make(map[string]interface{})
+
+	for len(chosenRandoms) < numberToPick {
+		randomIndex := rand.Intn(len(wordsByType))
+		details := wordsByType[randomIndex]
+		if _, present := chosenWords[details.Wotd]; !present {
+			chosenRandoms = append(chosenRandoms, details)
+			chosenWords[details.Wotd] = struct{}{}
+		}
+	}
+
+	return chosenRandoms
+}
+
+func playTheGame(randomDetails []model.PageDetails) {
+	randomDetail := randomDetails[rand.Intn(len(randomDetails))]
+
+	fmt.Println("The word of the day is:", strings.ToUpper(randomDetail.Wotd))
+	for i, detail := range randomDetails {
+		fmt.Printf("%d) %s\n", i, detail.Definition)
+	}
+	fmt.Print("Enter your best guess: ")
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	response := scanner.Text()
+	responseNum, err := strconv.Atoi(response)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// todo response validation
+	if randomDetail.Wotd == randomDetails[responseNum].Wotd {
+		fmt.Printf("Correct!")
+	} else {
+		fmt.Println("Wrong!")
+	}
 }
 
 func obtainWordOfTheDays(cacheFile *string) []model.PageDetails {
