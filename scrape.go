@@ -39,8 +39,7 @@ func main() {
 }
 
 func pickRandomWordType() string {
-	// todo: add "adverb" after some testing
-	wordTypes := []string{"noun", "adjective", "verb"}
+	wordTypes := []string{"noun", "adjective", "verb", "adverb"}
 	randomIndex := rand.Intn(len(wordTypes))
 	return wordTypes[randomIndex]
 }
