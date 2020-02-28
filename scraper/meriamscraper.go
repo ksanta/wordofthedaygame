@@ -19,11 +19,6 @@ func Scrape(outputChan chan model.PageDetails) {
 	// Instantiate default collector
 	c := colly.NewCollector()
 
-	q, _ := queue.New(
-		10,
-		&queue.InMemoryQueueStorage{MaxSize: 10000},
-	)
-
 	c.OnRequest(func(request *colly.Request) {
 		fmt.Println(request.AbsoluteURL(request.URL.Path))
 	})
@@ -53,9 +48,14 @@ func Scrape(outputChan chan model.PageDetails) {
 		outputChan <- wordEntry
 	})
 
+	q, _ := queue.New(
+		20,
+		&queue.InMemoryQueueStorage{MaxSize: 10000},
+	)
+
 	// Generate URLs based on dates and visit them all
 	yesterday := time.Now().AddDate(0, 0, -1)
-	for i := 0; i < 2000; i++ {
+	for i := 0; i < 3000; i++ {
 		date := yesterday.AddDate(0, 0, -i)
 		formattedDate := date.Format("2006-01-02")
 		url := "https://www.merriam-webster.com/word-of-the-day/" + formattedDate
