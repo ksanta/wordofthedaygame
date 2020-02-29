@@ -144,7 +144,7 @@ func scrapeWordsToCacheFile(cacheFile string) {
 	// Receive a stream of words into a CSV file until the channel is closed
 	csvWriter := csv.NewWriter(file)
 	for details := range wordChannel {
-		fmt.Println(details.Wotd)
+		fmt.Println(details.Wotd, "-", details.Definition)
 		err := csvWriter.Write(details.ToStringSlice())
 		if err != nil {
 			log.Fatal(err)

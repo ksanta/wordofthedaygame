@@ -4,6 +4,7 @@ import (
 	"github.com/gocolly/colly"
 	"github.com/gocolly/colly/queue"
 	"github.com/ksanta/wordofthedaygame/model"
+	"strings"
 	"time"
 )
 
@@ -29,8 +30,13 @@ func Scrape(outputChan chan model.PageDetails) {
 	})
 
 	// Scrape the word definition
-	c.OnHTML("div.wod-definition-container > p", func(element *colly.HTMLElement) {
-		element.Request.Ctx.Put(definitionKey, element.Text)
+	c.OnHTML("div.wod-definition-container", func(element *colly.HTMLElement) {
+		element.ForEachWithBreak("p", func(i int, element *colly.HTMLElement) bool {
+			cleanedDefinition := cleanUpDefinition(element.Text)
+			element.Request.Ctx.Put(definitionKey, cleanedDefinition)
+			// Returning false will break from the loop (ie process only first matching element)
+			return false
+		})
 	})
 
 	c.OnScraped(func(response *colly.Response) {
@@ -60,4 +66,10 @@ func Scrape(outputChan chan model.PageDetails) {
 	q.Run(c)
 
 	close(outputChan)
+}
+
+func cleanUpDefinition(rawText string) string {
+	firstColonIndex := strings.Index(rawText, ":")
+	cleanedDefinition := strings.TrimSpace(rawText[firstColonIndex+1:])
+	return cleanedDefinition
 }
