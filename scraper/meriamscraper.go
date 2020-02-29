@@ -1,7 +1,6 @@
 package scraper
 
 import (
-	"fmt"
 	"github.com/gocolly/colly"
 	"github.com/gocolly/colly/queue"
 	"github.com/ksanta/wordofthedaygame/model"
@@ -18,10 +17,6 @@ type MeriamScraper struct {
 func Scrape(outputChan chan model.PageDetails) {
 	// Instantiate default collector
 	c := colly.NewCollector()
-
-	c.OnRequest(func(request *colly.Request) {
-		fmt.Println(request.AbsoluteURL(request.URL.Path))
-	})
 
 	// Scrape the word of the day
 	c.OnHTML("h1", func(element *colly.HTMLElement) {

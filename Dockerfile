@@ -20,4 +20,4 @@ FROM alpine:latest
 # Copy the pre-built binary file from the previous stage
 COPY --from=builder /go/src/github.com/ksanta/wordofthedaygame/app /usr/local/bin
 
-CMD ["app"]
+ENTRYPOINT ["app"]

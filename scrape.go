@@ -75,7 +75,7 @@ func playTheGame(randomDetails []model.PageDetails) {
 
 	fmt.Println("The word of the day is:", strings.ToUpper(randomDetail.Wotd))
 	for i, detail := range randomDetails {
-		fmt.Printf("%d) %s\n", i, detail.Definition)
+		fmt.Printf("%d) %s\n", i+1, detail.Definition)
 	}
 	fmt.Print("Enter your best guess: ")
 	scanner := bufio.NewScanner(os.Stdin)
@@ -86,7 +86,7 @@ func playTheGame(randomDetails []model.PageDetails) {
 		log.Fatal(err)
 	}
 	// todo response validation
-	if randomDetail.Wotd == randomDetails[responseNum].Wotd {
+	if randomDetail.Wotd == randomDetails[responseNum-1].Wotd {
 		fmt.Printf("Correct!")
 	} else {
 		fmt.Println("Wrong!")
@@ -144,6 +144,7 @@ func scrapeWordsToCacheFile(cacheFile string) {
 	// Receive a stream of words into a CSV file until the channel is closed
 	csvWriter := csv.NewWriter(file)
 	for details := range wordChannel {
+		fmt.Println(details.Wotd)
 		err := csvWriter.Write(details.ToStringSlice())
 		if err != nil {
 			log.Fatal(err)
