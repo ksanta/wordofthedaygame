@@ -94,15 +94,66 @@ func playTheGame(randomDetails []model.PageDetails) {
 }
 
 func obtainWordOfTheDays(cacheFile *string) []model.PageDetails {
-	// If there is no cache file, scrape from the web
+	var allDetails []model.PageDetails
+
 	if fileDoesNotExists(cacheFile) {
 		fmt.Println(*cacheFile, "does not exist")
-		scrapeWordsToCacheFile(*cacheFile)
+		allDetails = scrapeWordsToCacheFile(*cacheFile)
 	} else {
 		fmt.Println(*cacheFile, "found")
+		allDetails = loadWordsFromCache(cacheFile)
 	}
 
-	// Read all the words from the cache file
+	return allDetails
+}
+
+func fileDoesNotExists(name *string) bool {
+	_, err := os.Stat(*name)
+	return os.IsNotExist(err)
+}
+
+func scrapeWordsToCacheFile(cacheFile string) []model.PageDetails {
+	// Run the scraper in a goroutine
+	incomingWordChannel := make(chan model.PageDetails)
+	go scraper.Scrape(incomingWordChannel)
+
+	// Start a consumer that will write words to CSV
+	outgoingWordChannel := createConsumerThatWritesToCsv(cacheFile)
+
+	// Capture the word into an array, and send it onwards to the CSV writer
+	var allDetails []model.PageDetails
+	for details := range incomingWordChannel {
+		allDetails = append(allDetails, details)
+		outgoingWordChannel <- details
+	}
+
+	return allDetails
+}
+
+func createConsumerThatWritesToCsv(cacheFile string) chan model.PageDetails {
+	wordChannel := make(chan model.PageDetails)
+
+	go func() {
+		file, err := os.Create(cacheFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
+
+		csvWriter := csv.NewWriter(file)
+		for details := range wordChannel {
+			err := csvWriter.Write(details.ToStringSlice())
+			if err != nil {
+				log.Fatal(err)
+			}
+			csvWriter.Flush()
+		}
+	}()
+
+	return wordChannel
+}
+
+func loadWordsFromCache(cacheFile *string) []model.PageDetails {
 	var allDetails []model.PageDetails
 	file, err := os.Open(*cacheFile)
 	if err != nil {
@@ -120,35 +171,5 @@ func obtainWordOfTheDays(cacheFile *string) []model.PageDetails {
 		details := model.NewFromStringSlice(record)
 		allDetails = append(allDetails, details)
 	}
-
 	return allDetails
-}
-
-func fileDoesNotExists(name *string) bool {
-	_, err := os.Stat(*name)
-	return os.IsNotExist(err)
-}
-
-func scrapeWordsToCacheFile(cacheFile string) {
-	// Create the cache file
-	file, err := os.Create(cacheFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	// Run the scraper in a goroutine
-	wordChannel := make(chan model.PageDetails)
-	go scraper.Scrape(wordChannel)
-
-	// Receive a stream of words into a CSV file until the channel is closed
-	csvWriter := csv.NewWriter(file)
-	for details := range wordChannel {
-		fmt.Println(details.Wotd, "-", details.Definition)
-		err := csvWriter.Write(details.ToStringSlice())
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	csvWriter.Flush()
 }
