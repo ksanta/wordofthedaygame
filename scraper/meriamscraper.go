@@ -15,57 +15,64 @@ const definitionKey = "definitionKey"
 type MeriamScraper struct {
 }
 
-func Scrape(outputChan chan model.PageDetails) {
-	// Instantiate default collector
-	c := colly.NewCollector()
+func (m *MeriamScraper) StartScraping(limit int) chan model.PageDetails {
+	outputChan := make(chan model.PageDetails)
 
-	// Scrape the word of the day
-	c.OnHTML("h1", func(element *colly.HTMLElement) {
-		element.Request.Ctx.Put(wotdKey, element.Text)
-	})
+	go func() {
 
-	// Scrape the word type (noun, verb, etc)
-	c.OnHTML("span.main-attr", func(element *colly.HTMLElement) {
-		element.Request.Ctx.Put(wordTypeKey, element.Text)
-	})
+		// Instantiate default collector
+		c := colly.NewCollector()
 
-	// Scrape the word definition
-	c.OnHTML("div.wod-definition-container", func(element *colly.HTMLElement) {
-		element.ForEachWithBreak("p", func(i int, element *colly.HTMLElement) bool {
-			cleanedDefinition := cleanUpDefinition(element.Text)
-			element.Request.Ctx.Put(definitionKey, cleanedDefinition)
-			// Returning false will break from the loop (ie process only first matching element)
-			return false
+		// Scrape the word of the day
+		c.OnHTML("h1", func(element *colly.HTMLElement) {
+			element.Request.Ctx.Put(wotdKey, element.Text)
 		})
-	})
 
-	c.OnScraped(func(response *colly.Response) {
-		wordEntry := model.PageDetails{
-			Wotd:       response.Ctx.Get(wotdKey),
-			WordType:   response.Ctx.Get(wordTypeKey),
-			Definition: response.Ctx.Get(definitionKey),
-			URL:        response.Request.URL.String(),
+		// Scrape the word type (noun, verb, etc)
+		c.OnHTML("span.main-attr", func(element *colly.HTMLElement) {
+			element.Request.Ctx.Put(wordTypeKey, element.Text)
+		})
+
+		// Scrape the word definition
+		c.OnHTML("div.wod-definition-container", func(element *colly.HTMLElement) {
+			element.ForEachWithBreak("p", func(i int, element *colly.HTMLElement) bool {
+				cleanedDefinition := cleanUpDefinition(element.Text)
+				element.Request.Ctx.Put(definitionKey, cleanedDefinition)
+				// Returning false will break from the loop (ie process only first matching element)
+				return false
+			})
+		})
+
+		c.OnScraped(func(response *colly.Response) {
+			wordEntry := model.PageDetails{
+				Wotd:       response.Ctx.Get(wotdKey),
+				WordType:   response.Ctx.Get(wordTypeKey),
+				Definition: response.Ctx.Get(definitionKey),
+				URL:        response.Request.URL.String(),
+			}
+			outputChan <- wordEntry
+		})
+
+		q, _ := queue.New(
+			20,
+			&queue.InMemoryQueueStorage{MaxSize: 10000},
+		)
+
+		// Generate URLs based on dates and visit them all
+		yesterday := time.Now().AddDate(0, 0, -1)
+		for i := 0; i < limit; i++ {
+			date := yesterday.AddDate(0, 0, -i)
+			formattedDate := date.Format("2006-01-02")
+			url := "https://www.merriam-webster.com/word-of-the-day/" + formattedDate
+			q.AddURL(url)
 		}
-		outputChan <- wordEntry
-	})
 
-	q, _ := queue.New(
-		20,
-		&queue.InMemoryQueueStorage{MaxSize: 10000},
-	)
+		q.Run(c)
 
-	// Generate URLs based on dates and visit them all
-	yesterday := time.Now().AddDate(0, 0, -1)
-	for i := 0; i < 3000; i++ {
-		date := yesterday.AddDate(0, 0, -i)
-		formattedDate := date.Format("2006-01-02")
-		url := "https://www.merriam-webster.com/word-of-the-day/" + formattedDate
-		q.AddURL(url)
-	}
+		close(outputChan)
+	}()
 
-	q.Run(c)
-
-	close(outputChan)
+	return outputChan
 }
 
 func cleanUpDefinition(rawText string) string {

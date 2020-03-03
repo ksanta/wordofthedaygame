@@ -16,16 +16,17 @@ import (
 	"time"
 )
 
+var limit = flag.Int("limit", 3000, "The number of definitions to scrape")
+var cacheFile = flag.String("cache", "words.cache", "Cache file name")
+
 func main() {
 	// Parse command line args
-	cacheFile := flag.String("cache", "words.cache", "Cache file name")
-	//updateWords := flag.Bool("updateWords", false, "Whether to check web for new words")
 	flag.Parse()
 
 	// Randomise the random number generator
 	rand.Seed(time.Now().Unix())
 
-	allDetails := obtainWordOfTheDays(cacheFile)
+	allDetails := obtainWordOfTheDays(cacheFile, *limit)
 	fmt.Println("FYI, the cache file contains", len(allDetails), "words")
 
 	wordType := pickRandomWordType()
@@ -93,12 +94,12 @@ func playTheGame(randomDetails []model.PageDetails) {
 	}
 }
 
-func obtainWordOfTheDays(cacheFile *string) []model.PageDetails {
+func obtainWordOfTheDays(cacheFile *string, limit int) []model.PageDetails {
 	var allDetails []model.PageDetails
 
 	if fileDoesNotExists(cacheFile) {
 		fmt.Println(*cacheFile, "does not exist")
-		allDetails = scrapeWordsToCacheFile(*cacheFile)
+		allDetails = scrapeWordsToCacheFile(*cacheFile, limit)
 	} else {
 		fmt.Println(*cacheFile, "found")
 		allDetails = loadWordsFromCache(cacheFile)
@@ -112,10 +113,10 @@ func fileDoesNotExists(name *string) bool {
 	return os.IsNotExist(err)
 }
 
-func scrapeWordsToCacheFile(cacheFile string) []model.PageDetails {
-	// Run the scraper in a goroutine
-	incomingWordChannel := make(chan model.PageDetails)
-	go scraper.Scrape(incomingWordChannel)
+func scrapeWordsToCacheFile(cacheFile string, limit int) []model.PageDetails {
+	// Start a producer of words
+	var myScraper scraper.Scraper = &scraper.MeriamScraper{}
+	incomingWordChannel := myScraper.StartScraping(limit)
 
 	// Start a consumer that will write words to CSV
 	outgoingWordChannel := createConsumerThatWritesToCsv(cacheFile)
