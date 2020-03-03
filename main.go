@@ -27,10 +27,8 @@ func main() {
 	rand.Seed(time.Now().Unix())
 
 	allDetails := obtainWordOfTheDays(cacheFile, *limit)
-	fmt.Println("FYI, the cache file contains", len(allDetails), "words")
 
 	wordType := pickRandomWordType()
-	fmt.Printf("Today's word is a %s!\n", wordType)
 
 	wordsByType := filterWordsByType(allDetails, wordType)
 
@@ -98,7 +96,7 @@ func obtainWordOfTheDays(cacheFile *string, limit int) []model.PageDetails {
 	var allDetails []model.PageDetails
 
 	if fileDoesNotExists(cacheFile) {
-		fmt.Println(*cacheFile, "does not exist")
+		fmt.Println(*cacheFile, "not found. Scraping from the web.")
 		allDetails = scrapeWordsToCacheFile(*cacheFile, limit)
 	} else {
 		fmt.Println(*cacheFile, "found")
@@ -119,16 +117,43 @@ func scrapeWordsToCacheFile(cacheFile string, limit int) []model.PageDetails {
 	incomingWordChannel := myScraper.StartScraping(limit)
 
 	// Start a consumer that will write words to CSV
-	outgoingWordChannel := createConsumerThatWritesToCsv(cacheFile)
+	csvChannel := createConsumerThatWritesToCsv(cacheFile)
+
+	// Start a consumer that will show percentage progress to the user
+	progressChannel := createConsumerThatShowsPercentageComplete(limit)
 
 	// Capture the word into an array, and send it onwards to the CSV writer
 	var allDetails []model.PageDetails
 	for details := range incomingWordChannel {
 		allDetails = append(allDetails, details)
-		outgoingWordChannel <- details
+		progressChannel <- true
+		csvChannel <- details
 	}
+	close(progressChannel)
+	close(csvChannel)
 
 	return allDetails
+}
+
+func createConsumerThatShowsPercentageComplete(limit int) chan bool {
+	progressChannel := make(chan bool)
+	countSoFar := 0
+	previousPercentage := 0
+
+	go func() {
+		for range progressChannel {
+			countSoFar++
+			currentPercentage := countSoFar * 100 / limit
+			// Only update the value if there is a change, to minimise flickering
+			if currentPercentage != previousPercentage {
+				fmt.Printf("\r%5v%%", currentPercentage)
+			}
+			previousPercentage = currentPercentage
+		}
+		fmt.Println()
+	}()
+
+	return progressChannel
 }
 
 func createConsumerThatWritesToCsv(cacheFile string) chan model.PageDetails {
@@ -147,8 +172,8 @@ func createConsumerThatWritesToCsv(cacheFile string) chan model.PageDetails {
 			if err != nil {
 				log.Fatal(err)
 			}
-			csvWriter.Flush()
 		}
+		csvWriter.Flush()
 	}()
 
 	return wordChannel
