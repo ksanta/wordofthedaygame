@@ -77,41 +77,48 @@ func playTheGame(words []model.PageDetails) {
 	for i, detail := range words {
 		fmt.Printf("%d) %s\n", i+1, detail.Definition)
 	}
-	responseNum, timeout := promptAndGetAnswerFromPlayer()
+	response, timeout := promptAndGetAnswerFromPlayer()
 	if timeout {
 		fmt.Println("💥 Too slow! 💥")
-	} else if randomWord.Wotd == words[responseNum-1].Wotd {
-		fmt.Println("Correct 🎉")
 	} else {
-		fmt.Println("Wrong! 💀💀💀")
+		correct := validateResponse(response, words, randomWord.Wotd)
+		if correct {
+			fmt.Println("Correct 🎉")
+		} else {
+			fmt.Println("Wrong! 💀💀💀")
+		}
 	}
 }
 
-func promptAndGetAnswerFromPlayer() (answer int, timeout bool) {
+func validateResponse(response string, words []model.PageDetails, correctWord string) bool {
+	responseNum, err := strconv.Atoi(response)
+	if err != nil {
+		return false
+	}
+
+	index := responseNum - 1
+	return index >= 0 && index < len(words) && words[index].Wotd == correctWord
+}
+
+func promptAndGetAnswerFromPlayer() (response string, timeout bool) {
 	fmt.Print("Enter your best guess: ")
 
-	answerChannel := make(chan int, 1)
+	answerChannel := make(chan string, 1)
 
 	// Read from player in different goroutine and send to channel
 	go func() {
 		scanner := bufio.NewScanner(os.Stdin)
 		scanner.Scan()
-		response := scanner.Text()
-		responseNum, err := strconv.Atoi(response)
-		if err != nil {
-			log.Fatal(err)
-		}
-		answerChannel <- responseNum
+		answerChannel <- scanner.Text()
 	}()
 
 	// Slightly evil: the timeout period goes from 10-20 seconds
 	randomisedWait := time.Duration(10 + rand.Intn(6))
 	select {
-	case answer = <-answerChannel:
-		// todo response validation
-		return answer, false
+	case response = <-answerChannel:
+		return response, false
 	case <-time.After(randomisedWait * time.Second):
-		return 0, true
+		return "", true
 	}
 }
 
