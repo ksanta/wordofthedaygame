@@ -80,7 +80,7 @@ func playTheGame(randomDetails []model.PageDetails) {
 	if timeout {
 		fmt.Println("💥 Too slow! 💥")
 	} else if randomDetail.Wotd == randomDetails[responseNum-1].Wotd {
-		fmt.Printf("Correct")
+		fmt.Println("Correct 🎉")
 	} else {
 		fmt.Println("Wrong! 💀💀💀")
 	}
