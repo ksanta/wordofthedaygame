@@ -16,8 +16,9 @@ import (
 	"time"
 )
 
-var limit = flag.Int("limit", 3000, "The number of definitions to scrape")
 var cacheFile = flag.String("cache", "words.cache", "Cache file name")
+var limit = flag.Int("limit", 3000, "The number of definitions to scrape")
+var numOptions = flag.Int("numOptions", 3, "Number of options per question")
 
 func main() {
 	// Parse command line args
@@ -32,9 +33,9 @@ func main() {
 
 	wordsByType := filterWordsByType(allDetails, wordType)
 
-	threeRandoms := pickSomeAtRandom(wordsByType, 3)
+	randomWords := pickRandomWords(wordsByType, *numOptions)
 
-	playTheGame(threeRandoms)
+	playTheGame(randomWords)
 }
 
 func pickRandomWordType() string {
@@ -53,7 +54,7 @@ func filterWordsByType(allDetails []model.PageDetails, wordType string) []model.
 	return filteredDetails
 }
 
-func pickSomeAtRandom(wordsByType []model.PageDetails, numberToPick int) []model.PageDetails {
+func pickRandomWords(wordsByType []model.PageDetails, numberToPick int) []model.PageDetails {
 	chosenRandoms := make([]model.PageDetails, 0, numberToPick)
 	chosenWords := make(map[string]interface{})
 
@@ -69,17 +70,17 @@ func pickSomeAtRandom(wordsByType []model.PageDetails, numberToPick int) []model
 	return chosenRandoms
 }
 
-func playTheGame(randomDetails []model.PageDetails) {
-	randomDetail := randomDetails[rand.Intn(len(randomDetails))]
+func playTheGame(words []model.PageDetails) {
+	randomWord := words[rand.Intn(len(words))]
 
-	fmt.Println("The word of the day is:", strings.ToUpper(randomDetail.Wotd))
-	for i, detail := range randomDetails {
+	fmt.Println("The word of the day is:", strings.ToUpper(randomWord.Wotd))
+	for i, detail := range words {
 		fmt.Printf("%d) %s\n", i+1, detail.Definition)
 	}
 	responseNum, timeout := promptAndGetAnswerFromPlayer()
 	if timeout {
 		fmt.Println("💥 Too slow! 💥")
-	} else if randomDetail.Wotd == randomDetails[responseNum-1].Wotd {
+	} else if randomWord.Wotd == words[responseNum-1].Wotd {
 		fmt.Println("Correct 🎉")
 	} else {
 		fmt.Println("Wrong! 💀💀💀")
@@ -104,7 +105,7 @@ func promptAndGetAnswerFromPlayer() (answer int, timeout bool) {
 	}()
 
 	// Slightly evil: the timeout period goes from 10-20 seconds
-	randomisedWait := time.Duration(10 + rand.Intn(11))
+	randomisedWait := time.Duration(10 + rand.Intn(6))
 	select {
 	case answer = <-answerChannel:
 		// todo response validation
@@ -118,10 +119,9 @@ func obtainWordOfTheDays(cacheFile *string, limit int) []model.PageDetails {
 	var allDetails []model.PageDetails
 
 	if fileDoesNotExists(cacheFile) {
-		fmt.Println(*cacheFile, "not found. Scraping from the web.")
+		fmt.Println("Scraping words from the web (please wait)")
 		allDetails = scrapeWordsToCacheFile(*cacheFile, limit)
 	} else {
-		fmt.Println(*cacheFile, "found")
 		allDetails = loadWordsFromCache(cacheFile)
 	}
 
