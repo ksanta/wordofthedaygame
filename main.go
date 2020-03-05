@@ -78,11 +78,11 @@ func playTheGame(randomDetails []model.PageDetails) {
 	}
 	responseNum, timeout := promptAndGetAnswerFromPlayer()
 	if timeout {
-		fmt.Println("Too slow!")
+		fmt.Println("💥 Too slow! 💥")
 	} else if randomDetail.Wotd == randomDetails[responseNum-1].Wotd {
-		fmt.Printf("Correct!")
+		fmt.Printf("Correct")
 	} else {
-		fmt.Println("Wrong!")
+		fmt.Println("Wrong! 💀💀💀")
 	}
 }
 
@@ -91,6 +91,7 @@ func promptAndGetAnswerFromPlayer() (answer int, timeout bool) {
 
 	answerChannel := make(chan int, 1)
 
+	// Read from player in different goroutine and send to channel
 	go func() {
 		scanner := bufio.NewScanner(os.Stdin)
 		scanner.Scan()
@@ -102,11 +103,13 @@ func promptAndGetAnswerFromPlayer() (answer int, timeout bool) {
 		answerChannel <- responseNum
 	}()
 
+	// Slightly evil: the timeout period goes from 10-20 seconds
+	randomisedWait := time.Duration(10 + rand.Intn(11))
 	select {
 	case answer = <-answerChannel:
 		// todo response validation
 		return answer, false
-	case <-time.After(10 * time.Second):
+	case <-time.After(randomisedWait * time.Second):
 		return 0, true
 	}
 }
