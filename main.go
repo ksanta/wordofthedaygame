@@ -76,19 +76,38 @@ func playTheGame(randomDetails []model.PageDetails) {
 	for i, detail := range randomDetails {
 		fmt.Printf("%d) %s\n", i+1, detail.Definition)
 	}
-	fmt.Print("Enter your best guess: ")
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Scan()
-	response := scanner.Text()
-	responseNum, err := strconv.Atoi(response)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// todo response validation
-	if randomDetail.Wotd == randomDetails[responseNum-1].Wotd {
+	responseNum, timeout := promptAndGetAnswerFromPlayer()
+	if timeout {
+		fmt.Println("Too slow!")
+	} else if randomDetail.Wotd == randomDetails[responseNum-1].Wotd {
 		fmt.Printf("Correct!")
 	} else {
 		fmt.Println("Wrong!")
+	}
+}
+
+func promptAndGetAnswerFromPlayer() (answer int, timeout bool) {
+	fmt.Print("Enter your best guess: ")
+
+	answerChannel := make(chan int, 1)
+
+	go func() {
+		scanner := bufio.NewScanner(os.Stdin)
+		scanner.Scan()
+		response := scanner.Text()
+		responseNum, err := strconv.Atoi(response)
+		if err != nil {
+			log.Fatal(err)
+		}
+		answerChannel <- responseNum
+	}()
+
+	select {
+	case answer = <-answerChannel:
+		// todo response validation
+		return answer, false
+	case <-time.After(10 * time.Second):
+		return 0, true
 	}
 }
 
@@ -114,7 +133,7 @@ func fileDoesNotExists(name *string) bool {
 func scrapeWordsToCacheFile(cacheFile string, limit int) []model.PageDetails {
 	// Start a producer of words
 	var myScraper scraper.Scraper = &scraper.MeriamScraper{}
-	incomingWordChannel := myScraper.StartScraping(limit)
+	incomingWordChannel := myScraper.Scrape(limit)
 
 	// Start a consumer that will write words to CSV
 	csvChannel := createConsumerThatWritesToCsv(cacheFile)

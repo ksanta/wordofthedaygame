@@ -15,7 +15,7 @@ const definitionKey = "definitionKey"
 type MeriamScraper struct {
 }
 
-func (m *MeriamScraper) StartScraping(limit int) chan model.PageDetails {
+func (m *MeriamScraper) Scrape(limit int) chan model.PageDetails {
 	outputChan := make(chan model.PageDetails)
 
 	go func() {
