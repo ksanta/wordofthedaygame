@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/ksanta/wordofthedaygame/model"
-	"log"
 	"math/rand"
 	"os"
 	"strconv"
@@ -25,6 +24,7 @@ func (game *Game) PlayGame() {
 	rand.Seed(time.Now().Unix())
 
 	wordsByType := game.groupWordsByType()
+	var stdinChannel chan string
 
 	fmt.Println("Playing", game.QuestionsPerGame, "rounds")
 	for i := 1; i <= game.QuestionsPerGame; i++ {
@@ -34,7 +34,8 @@ func (game *Game) PlayGame() {
 
 		randomWords := game.pickRandomWords(wordsByType[wordType])
 
-		correct := game.askQuestionAndCheckResponse(randomWords)
+		var correct bool
+		correct, stdinChannel = game.askQuestionAndCheckResponse(randomWords, stdinChannel)
 
 		if correct {
 			score++
@@ -79,17 +80,17 @@ func (game *Game) pickRandomWords(wordsByType []model.PageDetails) []model.PageD
 	return chosenRandoms
 }
 
-func (game *Game) askQuestionAndCheckResponse(words []model.PageDetails) bool {
+func (game *Game) askQuestionAndCheckResponse(words []model.PageDetails, stdinChannel chan string) (bool, chan string) {
 	randomWord := words[rand.Intn(len(words))]
 
 	fmt.Println("The word of the day is:", strings.ToUpper(randomWord.Wotd))
 	for i, detail := range words {
 		fmt.Printf("%d) %s\n", i+1, detail.Definition)
 	}
-	response, timeout := promptAndGetAnswerFromPlayer()
-	if timeout {
+	response, stdinChannel := promptAndGetAnswerFromPlayer(stdinChannel)
+	if stdinChannel != nil {
 		fmt.Println("💥 Too slow! 💥")
-		return false
+		return false, stdinChannel
 	} else {
 		correct := validateResponse(response, words, randomWord.Wotd)
 		if correct {
@@ -97,45 +98,54 @@ func (game *Game) askQuestionAndCheckResponse(words []model.PageDetails) bool {
 		} else {
 			fmt.Println("Wrong! 💀💀💀")
 		}
-		return correct
+		return correct, nil
 	}
 }
 
 func validateResponse(response string, words []model.PageDetails, correctWord string) bool {
+	// If the response doesn't convert to an integer, it's wrong
 	responseNum, err := strconv.Atoi(response)
 	if err != nil {
 		return false
 	}
 
 	index := responseNum - 1
-	return index >= 0 && index < len(words) && words[index].Wotd == correctWord
+
+	// If the response is out of range, it's wrong
+	if index < 0 && index >= len(words) {
+		return false
+	}
+
+	// Compare the response to the correct answer
+	return words[index].Wotd == correctWord
 }
 
-func promptAndGetAnswerFromPlayer() (response string, timeout bool) {
-	fmt.Print("Enter your best guess: ")
+func promptAndGetAnswerFromPlayer(stdinChannel chan string) (response string, channelForReuse chan string) {
+	fmt.Print("\nEnter your best guess: ")
 
-	answerChannel := make(chan string, 1)
+	// If the previous question timed out, a goroutine waiting for user input still exists and must
+	// read something to finish, so we reuse it for the next question
 
-	// Read from player in different goroutine and send to channel
-	go func() {
-		scanner := bufio.NewScanner(os.Stdin)
-		scanner.Scan()
-		answerChannel <- scanner.Text()
-		fmt.Println("Closed scanning goroutine!")
-	}()
+	if stdinChannel == nil {
+		stdinChannel = make(chan string, 1)
 
-	// Slightly evil: the timeout period is random
+		// Get the answer  from the player in a different goroutine and send to the channel
+		go func() {
+			scanner := bufio.NewScanner(os.Stdin)
+			scanner.Scan()
+			stdinChannel <- scanner.Text()
+		}()
+	}
+
+	// Slightly evil: randomise the timeout period
 	randomisedWait := time.Duration(10 + rand.Intn(6))
-	select {
-	case response = <-answerChannel:
-		return response, false
-	case <-time.After(randomisedWait * time.Second):
-		//todo defect fix: manually send answer to stdin to force closure of above goroutine
-		_, err := os.Stdin.WriteString("x\n")
-		if err != nil {
-			log.Fatalln(err)
-		}
 
-		return "", true
+	select {
+	case response = <-stdinChannel:
+		return response, nil
+	case <-time.After(randomisedWait * time.Second):
+		// On timeout, the goroutine is still blocked waiting for user input.
+		// In this case, save the channel for the next question
+		return "", stdinChannel
 	}
 }
