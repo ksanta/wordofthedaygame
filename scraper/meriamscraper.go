@@ -13,10 +13,16 @@ const wordTypeKey = "wordTypeKey"
 const definitionKey = "definitionKey"
 
 type MeriamScraper struct {
+	limit int
 }
 
-func (m *MeriamScraper) Scrape(limit int) chan model.PageDetails {
-	outputChan := make(chan model.PageDetails)
+// NewMeriamScraper returns the Meriam implementation of the Scraper interface
+func NewMeriamScraper(limit int) Scraper {
+	return &MeriamScraper{limit}
+}
+
+func (m *MeriamScraper) Scrape() chan model.WordDetail {
+	outputChan := make(chan model.WordDetail)
 
 	go func() {
 
@@ -44,7 +50,7 @@ func (m *MeriamScraper) Scrape(limit int) chan model.PageDetails {
 		})
 
 		c.OnScraped(func(response *colly.Response) {
-			wordEntry := model.PageDetails{
+			wordEntry := model.WordDetail{
 				Wotd:       response.Ctx.Get(wotdKey),
 				WordType:   response.Ctx.Get(wordTypeKey),
 				Definition: response.Ctx.Get(definitionKey),
@@ -60,7 +66,7 @@ func (m *MeriamScraper) Scrape(limit int) chan model.PageDetails {
 
 		// Generate URLs based on dates and visit them all
 		yesterday := time.Now().AddDate(0, 0, -1)
-		for i := 0; i < limit; i++ {
+		for i := 0; i < m.limit; i++ {
 			date := yesterday.AddDate(0, 0, -i)
 			formattedDate := date.Format("2006-01-02")
 			url := "https://www.merriam-webster.com/word-of-the-day/" + formattedDate

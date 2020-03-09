@@ -12,7 +12,7 @@ import (
 )
 
 type Game struct {
-	WordEntries        []model.PageDetails
+	WordEntries        []model.WordDetail
 	QuestionsPerGame   int
 	OptionsPerQuestion int
 }
@@ -47,8 +47,8 @@ func (game *Game) PlayGame() {
 
 // groupWordsByType is a one-time operation that converts the words slice into
 // a map keyed by the word type
-func (game *Game) groupWordsByType() map[string][]model.PageDetails {
-	wordsByType := make(map[string][]model.PageDetails)
+func (game *Game) groupWordsByType() map[string][]model.WordDetail {
+	wordsByType := make(map[string][]model.WordDetail)
 
 	for _, word := range game.WordEntries {
 		wordsByType[word.WordType] = append(wordsByType[word.WordType], word)
@@ -64,8 +64,8 @@ func (game *Game) pickRandomWordType() string {
 	return wordTypes[randomIndex]
 }
 
-func (game *Game) pickRandomWords(wordsByType []model.PageDetails) []model.PageDetails {
-	chosenRandoms := make([]model.PageDetails, 0, game.OptionsPerQuestion)
+func (game *Game) pickRandomWords(wordsByType []model.WordDetail) []model.WordDetail {
+	chosenRandoms := make([]model.WordDetail, 0, game.OptionsPerQuestion)
 	chosenWords := make(map[string]interface{})
 
 	for len(chosenRandoms) < game.OptionsPerQuestion {
@@ -80,7 +80,7 @@ func (game *Game) pickRandomWords(wordsByType []model.PageDetails) []model.PageD
 	return chosenRandoms
 }
 
-func (game *Game) askQuestionAndCheckResponse(words []model.PageDetails, stdinChannel chan string) (bool, chan string) {
+func (game *Game) askQuestionAndCheckResponse(words []model.WordDetail, stdinChannel chan string) (bool, chan string) {
 	randomWord := words[rand.Intn(len(words))]
 
 	fmt.Println("The word of the day is:", strings.ToUpper(randomWord.Wotd))
@@ -102,7 +102,7 @@ func (game *Game) askQuestionAndCheckResponse(words []model.PageDetails, stdinCh
 	}
 }
 
-func validateResponse(response string, words []model.PageDetails, correctWord string) bool {
+func validateResponse(response string, words []model.WordDetail, correctWord string) bool {
 	// If the response doesn't convert to an integer, it's wrong
 	responseNum, err := strconv.Atoi(response)
 	if err != nil {
