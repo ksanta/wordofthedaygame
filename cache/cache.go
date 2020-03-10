@@ -6,10 +6,10 @@ type Cache interface {
 	// DoesNotExist returns true if the cache does not exist
 	DoesNotExists() bool
 
-	// CreateCacheWriter creates a consumer that listens on the returned channel and writes all WordDetail
-	// objects to the cache
-	CreateCacheWriter() chan model.WordDetail
+	// CreateCacheWriter creates a consumer that listens on the returned channel and persists all words sent to the
+	// channel to the cache
+	CreateCacheWriter() chan model.Word
 
 	// LoadWordsFromCache loads all the words from the cache
-	LoadWordsFromCache() []model.WordDetail
+	LoadWordsFromCache() model.Words
 }

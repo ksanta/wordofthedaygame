@@ -21,8 +21,8 @@ func NewMeriamScraper(limit int) Scraper {
 	return &MeriamScraper{limit}
 }
 
-func (m *MeriamScraper) Scrape() chan model.WordDetail {
-	outputChan := make(chan model.WordDetail)
+func (m *MeriamScraper) Scrape() chan model.Word {
+	outputChan := make(chan model.Word)
 
 	go func() {
 
@@ -50,7 +50,7 @@ func (m *MeriamScraper) Scrape() chan model.WordDetail {
 		})
 
 		c.OnScraped(func(response *colly.Response) {
-			wordEntry := model.WordDetail{
+			wordEntry := model.Word{
 				Wotd:       response.Ctx.Get(wotdKey),
 				WordType:   response.Ctx.Get(wordTypeKey),
 				Definition: response.Ctx.Get(definitionKey),

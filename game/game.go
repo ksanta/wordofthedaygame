@@ -12,7 +12,7 @@ import (
 )
 
 type Game struct {
-	WordEntries        []model.WordDetail
+	Words              model.Words
 	QuestionsPerGame   int
 	OptionsPerQuestion int
 }
@@ -20,16 +20,16 @@ type Game struct {
 func (game *Game) PlayGame() {
 	score := 0
 
-	wordsByType := model.Words(game.WordEntries).GroupByType()
+	wordsByType := game.Words.GroupByType()
 	var stdinChannel chan string
 
 	fmt.Println("Playing", game.QuestionsPerGame, "rounds")
 	for i := 1; i <= game.QuestionsPerGame; i++ {
 		fmt.Printf("\nRound %v!\n", i)
 
-		wordType := model.Words(game.WordEntries).PickRandomType()
+		wordType := game.Words.PickRandomType()
 
-		randomWords := model.Words(wordsByType[wordType]).PickRandomWords(game.OptionsPerQuestion)
+		randomWords := wordsByType[wordType].PickRandomWords(game.OptionsPerQuestion)
 
 		var correct bool
 		correct, stdinChannel = game.askQuestionAndCheckResponse(randomWords, stdinChannel)
@@ -42,12 +42,12 @@ func (game *Game) PlayGame() {
 	fmt.Println("You scored", score, "out of", game.QuestionsPerGame)
 }
 
-func (game *Game) askQuestionAndCheckResponse(words []model.WordDetail, stdinChannel chan string) (bool, chan string) {
-	randomWord := model.Words(words).PickRandomWord()
+func (game *Game) askQuestionAndCheckResponse(words model.Words, stdinChannel chan string) (bool, chan string) {
+	randomWord := words.PickRandomWord()
 
 	fmt.Println("The word of the day is:", strings.ToUpper(randomWord.Wotd))
-	for i, detail := range words {
-		fmt.Printf("%d) %s\n", i+1, detail.Definition)
+	for i, word := range words {
+		fmt.Printf("%d) %s\n", i+1, word.Definition)
 	}
 	response, stdinChannel := promptAndGetAnswerFromPlayer(stdinChannel)
 	if stdinChannel != nil {
@@ -64,7 +64,7 @@ func (game *Game) askQuestionAndCheckResponse(words []model.WordDetail, stdinCha
 	}
 }
 
-func validateResponse(response string, words []model.WordDetail, correctWord string) bool {
+func validateResponse(response string, words model.Words, correctWord string) bool {
 	// If the response doesn't convert to an integer, it's wrong
 	responseNum, err := strconv.Atoi(response)
 	if err != nil {

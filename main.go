@@ -28,7 +28,7 @@ func main() {
 	words := obtainWordsOfTheDay()
 
 	theGame := game.Game{
-		WordEntries:        words,
+		Words:              words,
 		QuestionsPerGame:   *questionsPerGame,
 		OptionsPerQuestion: *optionsPerQuestion,
 	}
@@ -36,20 +36,20 @@ func main() {
 	theGame.PlayGame()
 }
 
-func obtainWordsOfTheDay() []model.WordDetail {
+func obtainWordsOfTheDay() model.Words {
 	myCache := cache.NewFileCache(*cacheFile)
 
 	if myCache.DoesNotExists() {
-		return populateCacheFromScraper(myCache)
+		return scrapeAndPopulateCache(myCache)
 	} else {
 		return myCache.LoadWordsFromCache()
 	}
 }
 
-func populateCacheFromScraper(myCache cache.Cache) []model.WordDetail {
+func scrapeAndPopulateCache(myCache cache.Cache) model.Words {
 	fmt.Println("Scraping words from the web (please wait)")
 
-	var allDetails = make([]model.WordDetail, 0, *limit)
+	var words = make(model.Words, 0, *limit)
 
 	// Start a producer of words
 	myScraper := scraper.NewMeriamScraper(*limit)
@@ -62,15 +62,15 @@ func populateCacheFromScraper(myCache cache.Cache) []model.WordDetail {
 	progressChannel := createConsumerThatShowsPercentageComplete(*limit)
 
 	// Capture the word into an array, and send it onwards to the CSV writer
-	for wordDetail := range incomingWordChannel {
-		allDetails = append(allDetails, wordDetail)
-		cacheChannel <- wordDetail
+	for word := range incomingWordChannel {
+		words = append(words, word)
+		cacheChannel <- word
 		progressChannel <- true
 	}
 	close(cacheChannel)
 	close(progressChannel)
 
-	return allDetails
+	return words
 }
 
 func createConsumerThatShowsPercentageComplete(limit int) chan bool {

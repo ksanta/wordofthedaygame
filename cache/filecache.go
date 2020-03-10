@@ -22,8 +22,8 @@ func (cache *FileCache) DoesNotExists() bool {
 	return os.IsNotExist(err)
 }
 
-func (cache *FileCache) CreateCacheWriter() chan model.WordDetail {
-	wordChannel := make(chan model.WordDetail)
+func (cache *FileCache) CreateCacheWriter() chan model.Word {
+	wordChannel := make(chan model.Word)
 
 	go func() {
 		file, err := os.Create(cache.cacheFile)
@@ -33,8 +33,8 @@ func (cache *FileCache) CreateCacheWriter() chan model.WordDetail {
 		defer file.Close()
 
 		csvWriter := csv.NewWriter(file)
-		for details := range wordChannel {
-			err := csvWriter.Write(details.ToStringSlice())
+		for word := range wordChannel {
+			err := csvWriter.Write(word.ToStringSlice())
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -45,8 +45,8 @@ func (cache *FileCache) CreateCacheWriter() chan model.WordDetail {
 	return wordChannel
 }
 
-func (cache *FileCache) LoadWordsFromCache() []model.WordDetail {
-	var allDetails []model.WordDetail
+func (cache *FileCache) LoadWordsFromCache() model.Words {
+	var words model.Words
 	file, err := os.Open(cache.cacheFile)
 	if err != nil {
 		log.Fatal(err)
@@ -60,8 +60,8 @@ func (cache *FileCache) LoadWordsFromCache() []model.WordDetail {
 		if err != nil {
 			log.Fatal(err)
 		}
-		details := model.NewFromStringSlice(record)
-		allDetails = append(allDetails, details)
+		word := model.NewFromStringSlice(record)
+		words = append(words, word)
 	}
-	return allDetails
+	return words
 }

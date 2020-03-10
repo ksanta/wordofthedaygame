@@ -2,15 +2,15 @@ package model
 
 import "fmt"
 
-type WordDetail struct {
+type Word struct {
 	Wotd       string
 	WordType   string
 	Definition string
 	URL        string
 }
 
-func NewFromStringSlice(stringSlice []string) WordDetail {
-	return WordDetail{
+func NewFromStringSlice(stringSlice []string) Word {
+	return Word{
 		Wotd:       stringSlice[0],
 		WordType:   stringSlice[1],
 		Definition: stringSlice[2],
@@ -18,10 +18,10 @@ func NewFromStringSlice(stringSlice []string) WordDetail {
 	}
 }
 
-func (d WordDetail) String() string {
+func (d Word) String() string {
 	return fmt.Sprintf("%s (%s): %s", d.Wotd, d.WordType, d.Definition)
 }
 
-func (d WordDetail) ToStringSlice() []string {
+func (d Word) ToStringSlice() []string {
 	return []string{d.Wotd, d.WordType, d.Definition, d.URL}
 }
