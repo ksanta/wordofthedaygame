@@ -25,8 +25,8 @@ func (words Words) PickRandomType() string {
 
 // PickRandomWords will pick n unique random words from this word slice. If it
 // happens to pick the same word twice, it will re-pick until a unique word is picked.
-func (words Words) PickRandomWords(numberToChoose int) []Word {
-	randomWords := make([]Word, 0, numberToChoose)
+func (words Words) PickRandomWords(numberToChoose int) Words {
+	randomWords := make(Words, 0, numberToChoose)
 	alreadyPickedWords := make(map[string]interface{})
 
 	// todo: prevent infinite loops if there aren't enough words in the slice to pick from
