@@ -7,6 +7,8 @@ import (
 	"github.com/ksanta/wordofthedaygame/game"
 	"github.com/ksanta/wordofthedaygame/model"
 	"github.com/ksanta/wordofthedaygame/scraper"
+	"math/rand"
+	"time"
 )
 
 var (
@@ -19,6 +21,9 @@ var (
 func main() {
 	// Parse command line args
 	flag.Parse()
+
+	// Randomise the random number generator
+	rand.Seed(time.Now().Unix())
 
 	words := obtainWordsOfTheDay()
 

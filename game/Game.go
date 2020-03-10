@@ -20,19 +20,16 @@ type Game struct {
 func (game *Game) PlayGame() {
 	score := 0
 
-	// Randomise the random number generator
-	rand.Seed(time.Now().Unix())
-
-	wordsByType := game.groupWordsByType()
+	wordsByType := model.Words(game.WordEntries).GroupByType()
 	var stdinChannel chan string
 
 	fmt.Println("Playing", game.QuestionsPerGame, "rounds")
 	for i := 1; i <= game.QuestionsPerGame; i++ {
 		fmt.Printf("\nRound %v!\n", i)
 
-		wordType := game.pickRandomWordType()
+		wordType := model.Words(game.WordEntries).PickRandomType()
 
-		randomWords := game.pickRandomWords(wordsByType[wordType])
+		randomWords := model.Words(wordsByType[wordType]).PickRandomWords(game.OptionsPerQuestion)
 
 		var correct bool
 		correct, stdinChannel = game.askQuestionAndCheckResponse(randomWords, stdinChannel)
@@ -45,43 +42,8 @@ func (game *Game) PlayGame() {
 	fmt.Println("You scored", score, "out of", game.QuestionsPerGame)
 }
 
-// groupWordsByType is a one-time operation that converts the words slice into
-// a map keyed by the word type
-func (game *Game) groupWordsByType() map[string][]model.WordDetail {
-	wordsByType := make(map[string][]model.WordDetail)
-
-	for _, word := range game.WordEntries {
-		wordsByType[word.WordType] = append(wordsByType[word.WordType], word)
-	}
-
-	return wordsByType
-}
-
-// todo: move this function to a method on some "[]words" interface, making it source-specific?
-func (game *Game) pickRandomWordType() string {
-	wordTypes := []string{"noun", "adjective", "verb", "adverb"}
-	randomIndex := rand.Intn(len(wordTypes))
-	return wordTypes[randomIndex]
-}
-
-func (game *Game) pickRandomWords(wordsByType []model.WordDetail) []model.WordDetail {
-	chosenRandoms := make([]model.WordDetail, 0, game.OptionsPerQuestion)
-	chosenWords := make(map[string]interface{})
-
-	for len(chosenRandoms) < game.OptionsPerQuestion {
-		randomIndex := rand.Intn(len(wordsByType))
-		details := wordsByType[randomIndex]
-		if _, present := chosenWords[details.Wotd]; !present {
-			chosenRandoms = append(chosenRandoms, details)
-			chosenWords[details.Wotd] = struct{}{}
-		}
-	}
-
-	return chosenRandoms
-}
-
 func (game *Game) askQuestionAndCheckResponse(words []model.WordDetail, stdinChannel chan string) (bool, chan string) {
-	randomWord := words[rand.Intn(len(words))]
+	randomWord := model.Words(words).PickRandomWord()
 
 	fmt.Println("The word of the day is:", strings.ToUpper(randomWord.Wotd))
 	for i, detail := range words {
