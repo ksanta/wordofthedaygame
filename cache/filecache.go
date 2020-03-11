@@ -17,7 +17,7 @@ func NewFileCache(cacheFile string) Cache {
 	return &FileCache{cacheFile}
 }
 
-func (cache *FileCache) DoesNotExists() bool {
+func (cache *FileCache) DoesNotExist() bool {
 	_, err := os.Stat(cache.cacheFile)
 	return os.IsNotExist(err)
 }

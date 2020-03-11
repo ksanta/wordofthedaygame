@@ -37,9 +37,10 @@ func main() {
 }
 
 func obtainWordsOfTheDay() model.Words {
-	myCache := cache.NewFileCache(*cacheFile)
+	//myCache := cache.NewFileCache(*cacheFile)
+	myCache := cache.NewDynamoDbCache()
 
-	if myCache.DoesNotExists() {
+	if myCache.DoesNotExist() {
 		return scrapeAndPopulateCache(myCache)
 	} else {
 		return myCache.LoadWordsFromCache()

@@ -25,3 +25,9 @@ Go 1.13 is required to build the binary.
 ```shell script
 go build
 ````
+
+# DynamoDB notes (work on progress
+Start DynamoDB local container
+```shell script
+docker run --rm --name dynamodb -p 8000:8000 amazon/dynamodb-local
+```
