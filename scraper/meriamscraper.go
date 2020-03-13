@@ -51,7 +51,7 @@ func (m *MeriamScraper) Scrape() chan model.Word {
 
 		c.OnScraped(func(response *colly.Response) {
 			wordEntry := model.Word{
-				Wotd:       response.Ctx.Get(wotdKey),
+				Word:       response.Ctx.Get(wotdKey),
 				WordType:   response.Ctx.Get(wordTypeKey),
 				Definition: response.Ctx.Get(definitionKey),
 				URL:        response.Request.URL.String(),

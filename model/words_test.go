@@ -6,10 +6,10 @@ import (
 )
 
 var sampleWords = Words{
-	Word{Wotd: "one"},
-	Word{Wotd: "two"},
-	Word{Wotd: "three"},
-	Word{Wotd: "four"},
+	Word{Word: "one"},
+	Word{Word: "two"},
+	Word{Word: "three"},
+	Word{Word: "four"},
 }
 
 func TestWords_PickRandomType(t *testing.T) {
@@ -23,7 +23,7 @@ func TestWords_PickRandomType(t *testing.T) {
 
 func TestWords_PickRandomWord(t *testing.T) {
 	rand.Seed(1)
-	got := sampleWords.PickRandomWord().Wotd
+	got := sampleWords.PickRandomWord().Word
 	expected := "two"
 	if got != expected {
 		t.Errorf("Got %s and expected %s", got, expected)

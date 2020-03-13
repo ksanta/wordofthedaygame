@@ -45,7 +45,7 @@ func (game *Game) PlayGame() {
 func (game *Game) askQuestionAndCheckResponse(words model.Words, stdinChannel chan string) (bool, chan string) {
 	randomWord := words.PickRandomWord()
 
-	fmt.Println("The word of the day is:", strings.ToUpper(randomWord.Wotd))
+	fmt.Println("The word of the day is:", strings.ToUpper(randomWord.Word))
 	for i, word := range words {
 		fmt.Printf("%d) %s\n", i+1, word.Definition)
 	}
@@ -54,7 +54,7 @@ func (game *Game) askQuestionAndCheckResponse(words model.Words, stdinChannel ch
 		fmt.Println("💥 Too slow! 💥")
 		return false, stdinChannel
 	} else {
-		correct := validateResponse(response, words, randomWord.Wotd)
+		correct := validateResponse(response, words, randomWord.Word)
 		if correct {
 			fmt.Println("Correct 🎉")
 		} else {
@@ -79,7 +79,7 @@ func validateResponse(response string, words model.Words, correctWord string) bo
 	}
 
 	// Compare the response to the correct answer
-	return words[index].Wotd == correctWord
+	return words[index].Word == correctWord
 }
 
 func promptAndGetAnswerFromPlayer(stdinChannel chan string) (response string, channelForReuse chan string) {

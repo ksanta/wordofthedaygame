@@ -3,7 +3,7 @@ package model
 import "fmt"
 
 type Word struct {
-	Wotd       string
+	Word       string
 	WordType   string
 	Definition string
 	URL        string
@@ -11,7 +11,7 @@ type Word struct {
 
 func NewFromStringSlice(stringSlice []string) Word {
 	return Word{
-		Wotd:       stringSlice[0],
+		Word:       stringSlice[0],
 		WordType:   stringSlice[1],
 		Definition: stringSlice[2],
 		URL:        stringSlice[3],
@@ -19,9 +19,9 @@ func NewFromStringSlice(stringSlice []string) Word {
 }
 
 func (d Word) String() string {
-	return fmt.Sprintf("%s (%s): %s", d.Wotd, d.WordType, d.Definition)
+	return fmt.Sprintf("%s (%s): %s", d.Word, d.WordType, d.Definition)
 }
 
 func (d Word) ToStringSlice() []string {
-	return []string{d.Wotd, d.WordType, d.Definition, d.URL}
+	return []string{d.Word, d.WordType, d.Definition, d.URL}
 }

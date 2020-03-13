@@ -8,10 +8,12 @@ import (
 	"github.com/ksanta/wordofthedaygame/model"
 	"github.com/ksanta/wordofthedaygame/scraper"
 	"math/rand"
+	"os"
 	"time"
 )
 
 var (
+	cacheType          = flag.String("cacheType", "file", "Must be either 'file' or 'dynamodb'")
 	cacheFile          = flag.String("cache", "words.cache", "Cache file name")
 	limit              = flag.Int("limit", 3000, "The number of definitions to scrape")
 	questionsPerGame   = flag.Int("questionsPerGame", 5, "Number of questions per game")
@@ -37,10 +39,17 @@ func main() {
 }
 
 func obtainWordsOfTheDay() model.Words {
-	//myCache := cache.NewFileCache(*cacheFile)
-	myCache := cache.NewDynamoDbCache()
+	var myCache cache.Cache
+	if *cacheType == "file" {
+		myCache = cache.NewFileCache(*cacheFile)
+	} else if *cacheType == "dynamodb" {
+		myCache = cache.NewDynamoDbCache()
+	} else {
+		fmt.Println("Invalid cache type provided")
+		os.Exit(1)
+	}
 
-	if myCache.DoesNotExist() {
+	if myCache.SetupRequired() {
 		return scrapeAndPopulateCache(myCache)
 	} else {
 		return myCache.LoadWordsFromCache()

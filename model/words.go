@@ -32,9 +32,9 @@ func (words Words) PickRandomWords(numberToChoose int) Words {
 	// todo: prevent infinite loops if there aren't enough words in the slice to pick from
 	for len(randomWords) < numberToChoose {
 		word := words.PickRandomWord()
-		if _, alreadyPicked := alreadyPickedWords[word.Wotd]; !alreadyPicked {
+		if _, alreadyPicked := alreadyPickedWords[word.Word]; !alreadyPicked {
 			randomWords = append(randomWords, word)
-			alreadyPickedWords[word.Wotd] = struct{}{}
+			alreadyPickedWords[word.Word] = struct{}{}
 		}
 	}
 

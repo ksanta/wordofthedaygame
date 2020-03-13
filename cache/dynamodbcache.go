@@ -1,11 +1,11 @@
 package cache
 
 import (
-	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/ksanta/wordofthedaygame/model"
 	"log"
 )
@@ -24,7 +24,7 @@ func NewDynamoDbCache() Cache {
 	return &DynamoDbCache{svc}
 }
 
-func (d *DynamoDbCache) DoesNotExist() bool {
+func (d *DynamoDbCache) SetupRequired() bool {
 	input := &dynamodb.DescribeTableInput{TableName: aws.String("Words")}
 	_, err := d.svc.DescribeTable(input)
 	if err != nil {
@@ -45,7 +45,18 @@ func (d *DynamoDbCache) CreateCacheWriter() chan model.Word {
 		d.createTable()
 
 		for word := range wordChannel {
-			fmt.Println(word)
+			marshalMap, err := dynamodbattribute.MarshalMap(word)
+			if err != nil {
+				panic(err)
+			}
+			input := &dynamodb.PutItemInput{
+				TableName: aws.String("Words"),
+				Item:      marshalMap,
+			}
+			_, err = d.svc.PutItem(input)
+			if err != nil {
+				panic(err)
+			}
 		}
 	}()
 
@@ -53,7 +64,24 @@ func (d *DynamoDbCache) CreateCacheWriter() chan model.Word {
 }
 
 func (d *DynamoDbCache) LoadWordsFromCache() model.Words {
-	panic("implement me")
+	var words model.Words
+	input := &dynamodb.ScanInput{
+		TableName: aws.String("Words")}
+	output, err := d.svc.Scan(input)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, item := range output.Items {
+		word := model.Word{}
+		err := dynamodbattribute.UnmarshalMap(item, &word)
+		if err != nil {
+			panic(err)
+		}
+		words = append(words, word)
+	}
+
+	return words
 }
 
 func (d *DynamoDbCache) createTable() {
@@ -61,13 +89,13 @@ func (d *DynamoDbCache) createTable() {
 		TableName: aws.String("Words"),
 		KeySchema: []*dynamodb.KeySchemaElement{
 			{
-				AttributeName: aws.String("word"),
+				AttributeName: aws.String("Word"),
 				KeyType:       aws.String("HASH"),
 			},
 		},
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
-				AttributeName: aws.String("word"),
+				AttributeName: aws.String("Word"),
 				AttributeType: aws.String("S"),
 			},
 		},
