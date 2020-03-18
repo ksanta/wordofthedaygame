@@ -14,6 +14,8 @@ type DynamoDbCache struct {
 	svc *dynamodb.DynamoDB
 }
 
+var TableName = aws.String("Words")
+
 func NewDynamoDbCache() Cache {
 	config := &aws.Config{
 		Region:   aws.String("ap-southeast-2"),
@@ -25,7 +27,7 @@ func NewDynamoDbCache() Cache {
 }
 
 func (d *DynamoDbCache) SetupRequired() bool {
-	input := &dynamodb.DescribeTableInput{TableName: aws.String("Words")}
+	input := &dynamodb.DescribeTableInput{TableName: TableName}
 	_, err := d.svc.DescribeTable(input)
 	if err != nil {
 		if err, ok := err.(awserr.Error); ok {
@@ -50,7 +52,7 @@ func (d *DynamoDbCache) CreateCacheWriter() chan model.Word {
 				panic(err)
 			}
 			input := &dynamodb.PutItemInput{
-				TableName: aws.String("Words"),
+				TableName: TableName,
 				Item:      marshalMap,
 			}
 			_, err = d.svc.PutItem(input)
@@ -66,7 +68,8 @@ func (d *DynamoDbCache) CreateCacheWriter() chan model.Word {
 func (d *DynamoDbCache) LoadWordsFromCache() model.Words {
 	var words model.Words
 	input := &dynamodb.ScanInput{
-		TableName: aws.String("Words")}
+		TableName: TableName,
+	}
 	output, err := d.svc.Scan(input)
 	if err != nil {
 		panic(err)
@@ -86,7 +89,7 @@ func (d *DynamoDbCache) LoadWordsFromCache() model.Words {
 
 func (d *DynamoDbCache) createTable() {
 	createTableInput := &dynamodb.CreateTableInput{
-		TableName: aws.String("Words"),
+		TableName: TableName,
 		KeySchema: []*dynamodb.KeySchemaElement{
 			{
 				AttributeName: aws.String("Word"),
@@ -100,8 +103,8 @@ func (d *DynamoDbCache) createTable() {
 			},
 		},
 		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-			ReadCapacityUnits:  aws.Int64(10),
-			WriteCapacityUnits: aws.Int64(10),
+			ReadCapacityUnits:  aws.Int64(1),
+			WriteCapacityUnits: aws.Int64(1),
 		},
 	}
 	_, err := d.svc.CreateTable(createTableInput)
@@ -109,7 +112,7 @@ func (d *DynamoDbCache) createTable() {
 		panic(err)
 	}
 
-	waitUntilExistsInput := &dynamodb.DescribeTableInput{TableName: aws.String("Words")}
+	waitUntilExistsInput := &dynamodb.DescribeTableInput{TableName: TableName}
 	err = d.svc.WaitUntilTableExists(waitUntilExistsInput)
 	if err != nil {
 		panic(err)
