@@ -30,9 +30,10 @@ func main() {
 	words := obtainWordsOfTheDay()
 
 	theGame := game.Game{
-		Words:              words,
-		QuestionsPerGame:   *questionsPerGame,
-		OptionsPerQuestion: *optionsPerQuestion,
+		Words:               words,
+		QuestionsPerGame:    *questionsPerGame,
+		OptionsPerQuestion:  *optionsPerQuestion,
+		DurationPerQuestion: 10 * time.Second,
 	}
 
 	theGame.PlayGame()

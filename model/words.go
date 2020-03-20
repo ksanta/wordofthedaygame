@@ -34,7 +34,6 @@ func (words Words) PickRandomWords(numberToChoose int) Words {
 	randomWords := make(Words, 0, numberToChoose)
 	alreadyPickedWords := make(map[string]interface{})
 
-	// todo: prevent infinite loops if there aren't enough words in the slice to pick from
 	for len(randomWords) < numberToChoose {
 		word := words.PickRandomWord()
 		if _, alreadyPicked := alreadyPickedWords[word.Word]; !alreadyPicked {

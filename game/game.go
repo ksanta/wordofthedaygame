@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/ksanta/wordofthedaygame/model"
-	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -12,13 +11,14 @@ import (
 )
 
 type Game struct {
-	Words              model.Words
-	QuestionsPerGame   int
-	OptionsPerQuestion int
+	Words               model.Words
+	QuestionsPerGame    int
+	OptionsPerQuestion  int
+	DurationPerQuestion time.Duration
 }
 
 func (game *Game) PlayGame() {
-	score := 0
+	totalPoints := 0
 
 	wordsByType := game.Words.GroupByType()
 	var stdinChannel chan string
@@ -31,28 +31,29 @@ func (game *Game) PlayGame() {
 
 		randomWords := wordsByType[wordType].PickRandomWords(game.OptionsPerQuestion)
 
-		var correct bool
-		correct, stdinChannel = game.askQuestionAndCheckResponse(randomWords, stdinChannel)
+		var points int
+		points, stdinChannel = game.askQuestionAndCheckResponse(randomWords, stdinChannel)
 
-		if correct {
-			score++
-		}
+		totalPoints += points
 	}
 	fmt.Println()
-	fmt.Println("You scored", score, "out of", game.QuestionsPerGame)
+	fmt.Println("You scored", totalPoints, "points!")
 }
 
-func (game *Game) askQuestionAndCheckResponse(words model.Words, stdinChannel chan string) (bool, chan string) {
+func (game *Game) askQuestionAndCheckResponse(words model.Words, stdinChannel chan string) (points int, stdinChan chan string) {
 	randomWord := words.PickRandomWord()
+
+	startTime := time.Now()
 
 	fmt.Println("The word of the day is:", strings.ToUpper(randomWord.Word))
 	for i, word := range words {
 		fmt.Printf("%d) %s\n", i+1, word.Definition)
 	}
-	response, stdinChannel := promptAndGetAnswerFromPlayer(stdinChannel)
+
+	response, stdinChannel := promptAndGetAnswerFromPlayer(stdinChannel, game.DurationPerQuestion)
 	if stdinChannel != nil {
 		fmt.Println("💥 Too slow! 💥")
-		return false, stdinChannel
+		return 0, stdinChannel
 	} else {
 		correct := validateResponse(response, words, randomWord.Word)
 		if correct {
@@ -60,8 +61,25 @@ func (game *Game) askQuestionAndCheckResponse(words model.Words, stdinChannel ch
 		} else {
 			fmt.Println("Wrong! 💀💀💀")
 		}
-		return correct, nil
+		elapsedTime := time.Since(startTime)
+
+		points = game.calculatePoints(correct, elapsedTime)
+		fmt.Printf("Earned %d points\n", points)
+
+		return points, nil
 	}
+}
+
+func (game *Game) calculatePoints(correct bool, elapsedTime time.Duration) int {
+	points := 0
+
+	if correct {
+		points += 100
+	}
+
+	points += int(100 * (game.DurationPerQuestion - elapsedTime) / game.DurationPerQuestion)
+
+	return points
 }
 
 func validateResponse(response string, words model.Words, correctWord string) bool {
@@ -82,7 +100,7 @@ func validateResponse(response string, words model.Words, correctWord string) bo
 	return words[index].Word == correctWord
 }
 
-func promptAndGetAnswerFromPlayer(stdinChannel chan string) (response string, channelForReuse chan string) {
+func promptAndGetAnswerFromPlayer(stdinChannel chan string, waitTime time.Duration) (response string, channelForReuse chan string) {
 	fmt.Print("\nEnter your best guess: ")
 
 	// If the previous question timed out, a goroutine waiting for user input still exists and must
@@ -99,13 +117,10 @@ func promptAndGetAnswerFromPlayer(stdinChannel chan string) (response string, ch
 		}()
 	}
 
-	// Slightly evil: randomise the timeout period
-	randomisedWait := time.Duration(10 + rand.Intn(6))
-
 	select {
 	case response = <-stdinChannel:
 		return response, nil
-	case <-time.After(randomisedWait * time.Second):
+	case <-time.After(waitTime):
 		// On timeout, the goroutine is still blocked waiting for user input.
 		// In this case, save the channel for the next question
 		return "", stdinChannel
