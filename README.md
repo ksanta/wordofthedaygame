@@ -26,8 +26,12 @@ Go 1.13 is required to build the binary.
 go build
 ````
 
-# DynamoDB notes (work on progress
+# Run with DynamoDB as the word cache
 Start DynamoDB local container
 ```shell script
-docker run --rm --name dynamodb -p 8000:8000 amazon/dynamodb-local
+docker run --rm -d --name dynamodb -p 8000:8000 amazon/dynamodb-local
+```
+Start the game with a flag (requires local binary)
+```shell script
+./wordofthedaygame -cacheType dynamodb
 ```
