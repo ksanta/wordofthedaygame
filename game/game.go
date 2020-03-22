@@ -21,7 +21,6 @@ func (game *Game) PlayGame() {
 	totalPoints := 0
 
 	wordsByType := game.Words.GroupByType()
-	var stdinChannel chan string
 
 	fmt.Println("Playing", game.QuestionsPerGame, "rounds")
 	for i := 1; i <= game.QuestionsPerGame; i++ {
@@ -31,29 +30,28 @@ func (game *Game) PlayGame() {
 
 		randomWords := wordsByType[wordType].PickRandomWords(game.OptionsPerQuestion)
 
-		var points int
-		points, stdinChannel = game.askQuestionAndCheckResponse(randomWords, stdinChannel)
-
-		totalPoints += points
+		totalPoints += game.askQuestionAndCheckResponse(randomWords)
 	}
 	fmt.Println()
 	fmt.Println("You scored", totalPoints, "points!")
 }
 
-func (game *Game) askQuestionAndCheckResponse(words model.Words, stdinChannel chan string) (points int, stdinChan chan string) {
+func (game *Game) askQuestionAndCheckResponse(words model.Words) int {
 	randomWord := words.PickRandomWord()
-
-	startTime := time.Now()
-
 	fmt.Println("The word of the day is:", strings.ToUpper(randomWord.Word))
 	for i, word := range words {
 		fmt.Printf("%d) %s\n", i+1, word.Definition)
 	}
+	fmt.Print("\nEnter your best guess: ")
+	startTime := time.Now()
 
-	response, stdinChannel := promptAndGetAnswerFromPlayer(stdinChannel, game.DurationPerQuestion)
+	response, stdinChannel := game.getAnswerFromPlayer()
 	if stdinChannel != nil {
 		fmt.Println("💥 Too slow! 💥")
-		return 0, stdinChannel
+		// Very important for the user to hit enter to close the goroutine listening on stdin
+		fmt.Print("Hit enter to move to the next question")
+		<-stdinChannel
+		return 0
 	} else {
 		correct := validateResponse(response, words, randomWord.Word)
 		if correct {
@@ -63,10 +61,10 @@ func (game *Game) askQuestionAndCheckResponse(words model.Words, stdinChannel ch
 		}
 		elapsedTime := time.Since(startTime)
 
-		points = game.calculatePoints(correct, elapsedTime)
+		points := game.calculatePoints(correct, elapsedTime)
 		fmt.Printf("Earned %d points\n", points)
 
-		return points, nil
+		return points
 	}
 }
 
@@ -100,29 +98,22 @@ func validateResponse(response string, words model.Words, correctWord string) bo
 	return words[index].Word == correctWord
 }
 
-func promptAndGetAnswerFromPlayer(stdinChannel chan string, waitTime time.Duration) (response string, channelForReuse chan string) {
-	fmt.Print("\nEnter your best guess: ")
+func (game *Game) getAnswerFromPlayer() (response string, channelForReuse chan string) {
+	stdinChannel := make(chan string, 1)
 
-	// If the previous question timed out, a goroutine waiting for user input still exists and must
-	// read something to finish, so we reuse it for the next question
-
-	if stdinChannel == nil {
-		stdinChannel = make(chan string, 1)
-
-		// Get the answer  from the player in a different goroutine and send to the channel
-		go func() {
-			scanner := bufio.NewScanner(os.Stdin)
-			scanner.Scan()
-			stdinChannel <- scanner.Text()
-		}()
-	}
+	// Get the answer  from the player in a different goroutine and send to the channel
+	go func() {
+		scanner := bufio.NewScanner(os.Stdin)
+		scanner.Scan()
+		stdinChannel <- scanner.Text()
+	}()
 
 	select {
 	case response = <-stdinChannel:
 		return response, nil
-	case <-time.After(waitTime):
+	case <-time.After(game.DurationPerQuestion):
 		// On timeout, the goroutine is still blocked waiting for user input.
-		// In this case, save the channel for the next question
+		// In this case, return it so the user can be prompted to hit enter to finish the goroutine
 		return "", stdinChannel
 	}
 }
