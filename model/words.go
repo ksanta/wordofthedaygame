@@ -48,3 +48,11 @@ func (words Words) PickRandomWords(numberToChoose int) Words {
 func (words Words) PickRandomWord() Word {
 	return words[rand.Intn(len(words))]
 }
+
+func (words Words) GetDefinitions() []string {
+	definitions := make([]string, len(words))
+	for i, word := range words {
+		definitions[i] = word.Definition
+	}
+	return definitions
+}

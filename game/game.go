@@ -2,11 +2,10 @@ package game
 
 import (
 	"bufio"
-	"fmt"
 	"github.com/ksanta/wordofthedaygame/model"
+	"github.com/ksanta/wordofthedaygame/player"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -15,57 +14,50 @@ type Game struct {
 	QuestionsPerGame    int
 	OptionsPerQuestion  int
 	DurationPerQuestion time.Duration
+	WordsByType         map[string]model.Words
 }
 
 func (game *Game) PlayGame() {
+	p := player.NewConsolePlayer()
 	totalPoints := 0
+	game.WordsByType = game.Words.GroupByType() // todo: store the words already grouped into the cache
 
-	wordsByType := game.Words.GroupByType()
+	p.DisplayIntro(game.QuestionsPerGame)
 
-	fmt.Println("Playing", game.QuestionsPerGame, "rounds")
 	for i := 1; i <= game.QuestionsPerGame; i++ {
-		fmt.Printf("\nRound %v!\n", i)
-
-		wordType := game.Words.PickRandomType()
-
-		randomWords := wordsByType[wordType].PickRandomWords(game.OptionsPerQuestion)
-
-		totalPoints += game.askQuestionAndCheckResponse(randomWords)
+		totalPoints += game.playRound(p, i)
 	}
-	fmt.Println()
-	fmt.Println("You scored", totalPoints, "points!")
+
+	p.DisplaySummary(totalPoints)
 }
 
-func (game *Game) askQuestionAndCheckResponse(words model.Words) int {
-	randomWord := words.PickRandomWord()
-	fmt.Println("The word of the day is:", strings.ToUpper(randomWord.Word))
-	for i, word := range words {
-		fmt.Printf("%d) %s\n", i+1, word.Definition)
-	}
-	fmt.Print("\nEnter your best guess: ")
+func (game *Game) playRound(p player.Player, round int) int {
+	wordType := game.Words.PickRandomType()
+	words := game.WordsByType[wordType].PickRandomWords(game.OptionsPerQuestion)
+
+	wordToGuess := words.PickRandomWord()
+	definitions := words.GetDefinitions()
+	timeoutChan := time.After(game.DurationPerQuestion)
+	responseChan := make(chan string, 1)
+
+	p.PresentQuestion(round, wordToGuess.Word, definitions, timeoutChan, responseChan)
+
 	startTime := time.Now()
+	response := <-responseChan
+	elapsedTime := time.Since(startTime)
 
-	response, stdinChannel := game.getAnswerFromPlayer()
-	if stdinChannel != nil {
-		fmt.Println("💥 Too slow! 💥")
-		// Very important for the user to hit enter to close the goroutine listening on stdin
-		fmt.Print("Hit enter to move to the next question")
-		<-stdinChannel
-		return 0
+	correct := validateResponse(response, words, wordToGuess.Word)
+	if correct {
+		p.DisplayCorrect()
 	} else {
-		correct := validateResponse(response, words, randomWord.Word)
-		if correct {
-			fmt.Println("Correct 🎉")
-		} else {
-			fmt.Println("Wrong! 💀💀💀")
-		}
-		elapsedTime := time.Since(startTime)
-
-		points := game.calculatePoints(correct, elapsedTime)
-		fmt.Printf("Earned %d points\n", points)
-
-		return points
+		p.DisplayWrong()
 	}
+
+	// todo: somehow always 99 points are awarded for the time remaining
+	points := game.calculatePoints(correct, elapsedTime)
+	p.DisplayProgress(points)
+
+	return points
 }
 
 func (game *Game) calculatePoints(correct bool, elapsedTime time.Duration) int {
