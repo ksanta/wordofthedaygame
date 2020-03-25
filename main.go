@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	cacheType          = flag.String("cacheType", "file", "Must be either 'file' or 'dynamodb'")
+	cacheType          = flag.String("cacheType", "file", "Must be 'file' for now")
 	cacheFile          = flag.String("cache", "words.cache", "Cache file name")
 	limit              = flag.Int("limit", 3000, "The number of definitions to scrape")
 	questionsPerGame   = flag.Int("questionsPerGame", 5, "Number of questions per game")
@@ -43,8 +43,6 @@ func obtainWordsOfTheDay() model.Words {
 	var myCache cache.Cache
 	if *cacheType == "file" {
 		myCache = cache.NewFileCache(*cacheFile)
-	} else if *cacheType == "dynamodb" {
-		myCache = cache.NewDynamoDbCache()
 	} else {
 		fmt.Println("Invalid cache type provided")
 		os.Exit(1)

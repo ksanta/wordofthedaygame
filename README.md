@@ -1,5 +1,5 @@
 # Word of the day game
-This is a simple game that will give you a word and make you guess the correct definition. All the words have been
+A simple game that will give you a word and prompt you to guess the correct definition. All the words have been
 previously featured as a "word of the day" on a popular dictionary website and are scraped from the website and then 
 stored into a local cache file.
 
@@ -25,13 +25,3 @@ Go 1.13 is required to build the binary.
 ```shell script
 go build
 ````
-
-# Run with DynamoDB as the word cache
-Start DynamoDB local container
-```shell script
-docker run --rm -d --name dynamodb -p 8000:8000 amazon/dynamodb-local
-```
-Start the game with a flag (requires local binary)
-```shell script
-./wordofthedaygame -cacheType dynamodb
-```
