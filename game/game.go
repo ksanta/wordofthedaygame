@@ -6,6 +6,7 @@ import (
 	"github.com/ksanta/wordofthedaygame/player"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -26,6 +27,7 @@ func (game *Game) PlayGame() {
 
 	for i := 1; i <= game.QuestionsPerGame; i++ {
 		totalPoints += game.playRound(p, i)
+		time.Sleep(1 * time.Second) // Give the player time to prepare for the next round
 	}
 
 	p.DisplaySummary(totalPoints)
@@ -33,27 +35,25 @@ func (game *Game) PlayGame() {
 
 func (game *Game) playRound(p player.Player, round int) int {
 	wordType := game.Words.PickRandomType()
-	words := game.WordsByType[wordType].PickRandomWords(game.OptionsPerQuestion)
+	wordsInRound := game.WordsByType[wordType].PickRandomWords(game.OptionsPerQuestion)
 
-	wordToGuess := words.PickRandomWord()
-	definitions := words.GetDefinitions()
+	wordToGuess := wordsInRound.PickRandomWord()
+	definitions := wordsInRound.GetDefinitions()
 	timeoutChan := time.After(game.DurationPerQuestion)
 	responseChan := make(chan string, 1)
 
-	p.PresentQuestion(round, wordToGuess.Word, definitions, timeoutChan, responseChan)
-
 	startTime := time.Now()
+	p.PresentQuestion(round, wordToGuess.Word, definitions, timeoutChan, responseChan)
 	response := <-responseChan
 	elapsedTime := time.Since(startTime)
 
-	correct := validateResponse(response, words, wordToGuess.Word)
+	correct := validateResponse(response, wordsInRound, wordToGuess.Word)
 	if correct {
 		p.DisplayCorrect()
 	} else {
 		p.DisplayWrong()
 	}
 
-	// todo: somehow always 99 points are awarded for the time remaining
 	points := game.calculatePoints(correct, elapsedTime)
 	p.DisplayProgress(points)
 
@@ -74,7 +74,7 @@ func (game *Game) calculatePoints(correct bool, elapsedTime time.Duration) int {
 
 func validateResponse(response string, words model.Words, correctWord string) bool {
 	// If the response doesn't convert to an integer, it's wrong
-	responseNum, err := strconv.Atoi(response)
+	responseNum, err := strconv.Atoi(strings.TrimSpace(response))
 	if err != nil {
 		return false
 	}
@@ -82,7 +82,7 @@ func validateResponse(response string, words model.Words, correctWord string) bo
 	index := responseNum - 1
 
 	// If the response is out of range, it's wrong
-	if index < 0 && index >= len(words) {
+	if index < 0 || index >= len(words) {
 		return false
 	}
 
