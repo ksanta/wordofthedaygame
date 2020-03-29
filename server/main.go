@@ -3,11 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"github.com/ksanta/wordofthedaygame/cache"
 	"github.com/ksanta/wordofthedaygame/game"
 	"github.com/ksanta/wordofthedaygame/model"
+	"github.com/ksanta/wordofthedaygame/player"
 	"github.com/ksanta/wordofthedaygame/scraper"
-	"math/rand"
+	"log"
+	"net/http"
 	"os"
 	"time"
 )
@@ -18,22 +21,39 @@ var (
 	limit              = flag.Int("limit", 3000, "The number of definitions to scrape")
 	questionsPerGame   = flag.Int("questionsPerGame", 5, "Number of questions per game")
 	optionsPerQuestion = flag.Int("optionsPerQuestion", 3, "Number of options per question")
+	addr               = flag.String("addr", "localhost:8080", "http service address")
 )
 
+var upgrader = websocket.Upgrader{} // use default options
+
+var words model.Words
+
 func main() {
-	// Parse command line args
 	flag.Parse()
 
-	// Randomise the random number generator
-	rand.Seed(time.Now().Unix())
+	words = obtainWordsOfTheDay()
 
-	words := obtainWordsOfTheDay()
+	http.HandleFunc("/game", handleNewPlayer)
+	log.Println("Listening on", *addr)
+	log.Fatal(http.ListenAndServe(*addr, nil))
+}
+
+func handleNewPlayer(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Print("upgrade fail:", err)
+		return
+	}
+	defer conn.Close()
+
+	p := player.NewWebsocketPlayer(conn)
 
 	theGame := game.Game{
 		Words:               words,
 		QuestionsPerGame:    *questionsPerGame,
 		OptionsPerQuestion:  *optionsPerQuestion,
 		DurationPerQuestion: 10 * time.Second,
+		Player:              p,
 	}
 
 	theGame.PlayGame()

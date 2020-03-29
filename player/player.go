@@ -1,8 +1,13 @@
 package player
 
-import "time"
+import (
+	"time"
+)
 
 type Player interface {
+	// GetPlayerDetails will prompt the player for some details and save them
+	GetPlayerDetails()
+
 	// DisplayIntro will let the player know how many questions will be asked
 	DisplayIntro(questionsPerGame int)
 

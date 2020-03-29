@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"github.com/ksanta/wordofthedaygame/model"
 	"github.com/ksanta/wordofthedaygame/player"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -16,24 +17,29 @@ type Game struct {
 	OptionsPerQuestion  int
 	DurationPerQuestion time.Duration
 	WordsByType         map[string]model.Words
+	Player              player.Player
 }
 
 func (game *Game) PlayGame() {
-	p := player.NewConsolePlayer()
+	// Randomise the random number generator
+	rand.Seed(time.Now().Unix())
+
 	totalPoints := 0
 	game.WordsByType = game.Words.GroupByType() // todo: store the words already grouped into the cache
 
-	p.DisplayIntro(game.QuestionsPerGame)
+	game.Player.GetPlayerDetails()
+
+	game.Player.DisplayIntro(game.QuestionsPerGame)
 
 	for i := 1; i <= game.QuestionsPerGame; i++ {
-		totalPoints += game.playRound(p, i)
+		totalPoints += game.playRound(i)
 		time.Sleep(1 * time.Second) // Give the player time to prepare for the next round
 	}
 
-	p.DisplaySummary(totalPoints)
+	game.Player.DisplaySummary(totalPoints)
 }
 
-func (game *Game) playRound(p player.Player, round int) int {
+func (game *Game) playRound(round int) int {
 	wordType := game.Words.PickRandomType()
 	wordsInRound := game.WordsByType[wordType].PickRandomWords(game.OptionsPerQuestion)
 
@@ -43,19 +49,19 @@ func (game *Game) playRound(p player.Player, round int) int {
 	responseChan := make(chan string, 1)
 
 	startTime := time.Now()
-	p.PresentQuestion(round, wordToGuess.Word, definitions, timeoutChan, responseChan)
+	game.Player.PresentQuestion(round, wordToGuess.Word, definitions, timeoutChan, responseChan)
 	response := <-responseChan
 	elapsedTime := time.Since(startTime)
 
 	correct := validateResponse(response, wordsInRound, wordToGuess.Word)
 	if correct {
-		p.DisplayCorrect()
+		game.Player.DisplayCorrect()
 	} else {
-		p.DisplayWrong()
+		game.Player.DisplayWrong()
 	}
 
 	points := game.calculatePoints(correct, elapsedTime)
-	p.DisplayProgress(points)
+	game.Player.DisplayProgress(points)
 
 	return points
 }
