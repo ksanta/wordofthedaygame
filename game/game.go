@@ -73,6 +73,10 @@ func (game *Game) calculatePoints(correct bool, elapsedTime time.Duration) int {
 
 	points += int(100 * (game.DurationPerQuestion - elapsedTime) / game.DurationPerQuestion)
 
+	if points < 0 {
+		points = 0
+	}
+
 	return points
 }
 
