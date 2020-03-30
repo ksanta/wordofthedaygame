@@ -43,17 +43,15 @@ func (game *Game) playRound(round int) int {
 	wordType := game.Words.PickRandomType()
 	wordsInRound := game.WordsByType[wordType].PickRandomWords(game.OptionsPerQuestion)
 
-	wordToGuess := wordsInRound.PickRandomWord()
+	wordToGuess := wordsInRound.PickRandomWord().Word
 	definitions := wordsInRound.GetDefinitions()
 	timeoutChan := time.After(game.DurationPerQuestion)
-	responseChan := make(chan string, 1)
 
 	startTime := time.Now()
-	game.Player.PresentQuestion(round, wordToGuess.Word, definitions, timeoutChan, responseChan)
-	response := <-responseChan
+	response := game.Player.PresentQuestion(round, wordToGuess, definitions, timeoutChan)
 	elapsedTime := time.Since(startTime)
 
-	correct := validateResponse(response, wordsInRound, wordToGuess.Word)
+	correct := validateResponse(response, wordsInRound, wordToGuess)
 	if correct {
 		game.Player.DisplayCorrect()
 	} else {

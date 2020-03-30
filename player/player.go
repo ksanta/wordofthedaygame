@@ -14,8 +14,7 @@ type Player interface {
 	// PresentQuestion will present to the player a word and ask them which definition they
 	// think is the correct one.
 	// If the player takes too long, the timeoutChan will fire.
-	// The player's answer will be sent through in the response chan.
-	PresentQuestion(round int, wordToGuess string, definitions []string, timeoutChan <-chan time.Time, responseChan chan string)
+	PresentQuestion(round int, wordToGuess string, definitions []string, timeoutChan <-chan time.Time) string
 
 	DisplayCorrect()
 

@@ -28,7 +28,7 @@ func (player *ConsolePlayer) DisplayIntro(questionsPerGame int) {
 	fmt.Println("Playing", questionsPerGame, "rounds")
 }
 
-func (player *ConsolePlayer) PresentQuestion(round int, wordToGuess string, definitions []string, timeoutChan <-chan time.Time, responseChan chan string) {
+func (player *ConsolePlayer) PresentQuestion(round int, wordToGuess string, definitions []string, timeoutChan <-chan time.Time) string {
 	fmt.Println()
 	fmt.Printf("Round %d!\n", round)
 	fmt.Println("The word of the day is:", strings.ToUpper(wordToGuess))
@@ -37,7 +37,8 @@ func (player *ConsolePlayer) PresentQuestion(round int, wordToGuess string, defi
 		fmt.Printf("%d) %s\n", i+1, definition)
 	}
 	fmt.Print("\nEnter your best guess: ")
-	responseChan <- player.getAnswerFromPlayer(timeoutChan)
+
+	return player.getAnswerFromPlayer(timeoutChan)
 }
 
 func (player *ConsolePlayer) DisplayCorrect() {

@@ -68,7 +68,8 @@ func startReadLoop(conn *websocket.Conn) chan struct{} {
 				handleIntroMessage(msg.Intro)
 
 			} else if msg.PresentQuestion != nil {
-				handlePresentQuestionMessage(conn, msg.PresentQuestion)
+				// Run in separate goroutine, so we can listen for timeout msg too
+				go handlePresentQuestionMessage(conn, msg.PresentQuestion)
 
 			} else if msg.Timeout != nil {
 				handleTimeoutMessage()

@@ -47,7 +47,7 @@ func (player *WebsocketPlayer) DisplayIntro(questionsPerGame int) {
 	}
 }
 
-func (player *WebsocketPlayer) PresentQuestion(round int, wordToGuess string, definitions []string, timeoutChan <-chan time.Time, responseChan chan string) {
+func (player *WebsocketPlayer) PresentQuestion(round int, wordToGuess string, definitions []string, timeoutChan <-chan time.Time) string {
 	request := model.Message{
 		PresentQuestion: &model.PresentQuestion{
 			Round:       round,
@@ -60,15 +60,31 @@ func (player *WebsocketPlayer) PresentQuestion(round int, wordToGuess string, de
 		log.Fatal("Error presenting question:", err)
 	}
 
-	// todo send the timeout message if the player took too long
+	responseChan := make(chan string)
+	go func() {
+		var response model.Message
+		err = player.conn.ReadJSON(&response)
+		if err != nil {
+			log.Fatal("Receive PlayerDetailsResp error:", err)
+		}
+		responseChan <- response.PlayerResponse.Response
+	}()
 
-	//todo: move this to goroutine?
-	var response model.Message
-	err = player.conn.ReadJSON(&response)
-	if err != nil {
-		log.Fatal("Receive PlayerDetailsResp error:", err)
+	select {
+	case response := <-responseChan:
+		return response
+	case <-timeoutChan:
+		timeoutMsg := model.Message{
+			Timeout: &model.Timeout{},
+		}
+		err := player.conn.WriteJSON(timeoutMsg)
+		if err != nil {
+			log.Fatal("Error sending timeout:", err)
+		}
+		// Still wait for user to respond after timeout
+		<-responseChan
+		return ""
 	}
-	responseChan <- response.PlayerResponse.Response
 }
 
 func (player *WebsocketPlayer) DisplayCorrect() {
