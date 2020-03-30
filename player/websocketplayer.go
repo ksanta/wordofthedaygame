@@ -11,6 +11,7 @@ import (
 type WebsocketPlayer struct {
 	conn          *websocket.Conn
 	PlayerDetails model.PlayerDetailsResp
+	Points
 }
 
 func NewWebsocketPlayer(conn *websocket.Conn) Player {
@@ -119,10 +120,10 @@ func (player *WebsocketPlayer) DisplayProgress(points int) {
 	}
 }
 
-func (player *WebsocketPlayer) DisplaySummary(totalPoints int) {
+func (player *WebsocketPlayer) DisplaySummary() {
 	msg := model.Message{
 		Summary: &model.Summary{
-			TotalPoints: totalPoints,
+			TotalPoints: player.GetPoints(),
 		},
 	}
 	err := player.conn.WriteJSON(msg)

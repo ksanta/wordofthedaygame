@@ -24,5 +24,9 @@ type Player interface {
 	DisplayProgress(points int)
 
 	// DisplaySummary will show the user the number of points they got in the game
-	DisplaySummary(totalPoints int)
+	DisplaySummary()
+
+	AddPoints(points int)
+
+	GetPoints() int
 }

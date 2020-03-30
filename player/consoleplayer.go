@@ -11,6 +11,7 @@ import (
 
 type ConsolePlayer struct {
 	PlayerDetails model.PlayerDetailsResp
+	Points
 }
 
 func NewConsolePlayer() Player {
@@ -53,9 +54,9 @@ func (player *ConsolePlayer) DisplayProgress(points int) {
 	fmt.Printf("Earned %d points\n", points)
 }
 
-func (player *ConsolePlayer) DisplaySummary(totalPoints int) {
+func (player *ConsolePlayer) DisplaySummary() {
 	fmt.Println()
-	fmt.Println("You scored", totalPoints, "points!")
+	fmt.Println("You scored", player.GetPoints(), "points!")
 }
 
 func (player *ConsolePlayer) getAnswerFromPlayer(timeoutChan <-chan time.Time) string {

@@ -24,7 +24,6 @@ func (game *Game) PlayGame() {
 	// Randomise the random number generator
 	rand.Seed(time.Now().Unix())
 
-	totalPoints := 0
 	game.WordsByType = game.Words.GroupByType() // todo: store the words already grouped into the cache
 
 	game.Player.GetPlayerDetails()
@@ -32,14 +31,14 @@ func (game *Game) PlayGame() {
 	game.Player.DisplayIntro(game.QuestionsPerGame)
 
 	for i := 1; i <= game.QuestionsPerGame; i++ {
-		totalPoints += game.playRound(i)
+		game.playRound(i)
 		time.Sleep(1 * time.Second) // Give the player time to prepare for the next round
 	}
 
-	game.Player.DisplaySummary(totalPoints)
+	game.Player.DisplaySummary()
 }
 
-func (game *Game) playRound(round int) int {
+func (game *Game) playRound(round int) {
 	wordType := game.Words.PickRandomType()
 	wordsInRound := game.WordsByType[wordType].PickRandomWords(game.OptionsPerQuestion)
 
@@ -61,7 +60,7 @@ func (game *Game) playRound(round int) int {
 	points := game.calculatePoints(correct, elapsedTime)
 	game.Player.DisplayProgress(points)
 
-	return points
+	game.Player.AddPoints(points)
 }
 
 func (game *Game) calculatePoints(correct bool, elapsedTime time.Duration) int {
