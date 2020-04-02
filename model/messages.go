@@ -3,7 +3,7 @@ package model
 // Message is the only type sent across the network
 type Message struct {
 	PlayerDetailsReq  *PlayerDetailsReq
-	PlayerDetailsResp *PlayerDetailsResp
+	PlayerDetailsResp *PlayerDetails
 	Intro             *Intro
 	PresentQuestion   *PresentQuestion
 	PlayerResponse    *PlayerResponse
@@ -17,8 +17,8 @@ type Message struct {
 // PlayerDetailsReq is sent to the client telling it to get the player's details
 type PlayerDetailsReq struct{}
 
-// PlayerDetailsResp is sent to the server with player details when they start the game
-type PlayerDetailsResp struct {
+// PlayerDetails is sent to the server with player details when they start the game
+type PlayerDetails struct {
 	Name string
 }
 

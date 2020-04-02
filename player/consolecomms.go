@@ -9,27 +9,26 @@ import (
 	"time"
 )
 
-type ConsolePlayer struct {
-	PlayerDetails model.PlayerDetailsResp
-	Points
+type ConsoleCommunication struct {
+	PlayerDetails model.PlayerDetails
 }
 
-func NewConsolePlayer() Player {
-	return &ConsolePlayer{}
+func NewConsoleCommunication() Comms {
+	return &ConsoleCommunication{}
 }
 
-func (player *ConsolePlayer) GetPlayerDetails() {
+func (consoleComm *ConsoleCommunication) GetPlayerDetails() string {
 	fmt.Print("Enter your name: ")
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
-	player.PlayerDetails = model.PlayerDetailsResp{Name: scanner.Text()}
+	return scanner.Text()
 }
 
-func (player *ConsolePlayer) DisplayIntro(questionsPerGame int) {
+func (consoleComm *ConsoleCommunication) DisplayIntro(questionsPerGame int) {
 	fmt.Println("Playing", questionsPerGame, "rounds")
 }
 
-func (player *ConsolePlayer) PresentQuestion(round int, wordToGuess string, definitions []string, timeoutChan <-chan time.Time) string {
+func (consoleComm *ConsoleCommunication) PresentQuestion(round int, wordToGuess string, definitions []string, timeoutChan <-chan time.Time) string {
 	fmt.Println()
 	fmt.Printf("Round %d!\n", round)
 	fmt.Println("The word of the day is:", strings.ToUpper(wordToGuess))
@@ -39,27 +38,27 @@ func (player *ConsolePlayer) PresentQuestion(round int, wordToGuess string, defi
 	}
 	fmt.Print("\nEnter your best guess: ")
 
-	return player.getAnswerFromPlayer(timeoutChan)
+	return consoleComm.getAnswerFromPlayer(timeoutChan)
 }
 
-func (player *ConsolePlayer) DisplayCorrect() {
+func (consoleComm *ConsoleCommunication) DisplayCorrect() {
 	fmt.Println("Correct 🎉")
 }
 
-func (player *ConsolePlayer) DisplayWrong() {
+func (consoleComm *ConsoleCommunication) DisplayWrong() {
 	fmt.Println("Wrong! 💀💀💀")
 }
 
-func (player *ConsolePlayer) DisplayProgress(points int) {
+func (consoleComm *ConsoleCommunication) DisplayProgress(points int) {
 	fmt.Printf("Earned %d points\n", points)
 }
 
-func (player *ConsolePlayer) DisplaySummary() {
+func (consoleComm *ConsoleCommunication) DisplaySummary(totalPoints int) {
 	fmt.Println()
-	fmt.Println("You scored", player.GetPoints(), "points!")
+	fmt.Println("You scored", totalPoints, "points!")
 }
 
-func (player *ConsolePlayer) getAnswerFromPlayer(timeoutChan <-chan time.Time) string {
+func (consoleComm *ConsoleCommunication) getAnswerFromPlayer(timeoutChan <-chan time.Time) string {
 	stdinChannel := make(chan string, 1)
 
 	// Get the answer from the player in a different goroutine and send to the channel

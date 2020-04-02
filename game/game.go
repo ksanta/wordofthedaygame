@@ -26,7 +26,7 @@ func (game *Game) PlayGame() {
 
 	game.WordsByType = game.Words.GroupByType() // todo: store the words already grouped into the cache
 
-	game.Player.GetPlayerDetails()
+	game.Player.SetName(game.Player.GetPlayerDetails())
 
 	game.Player.DisplayIntro(game.QuestionsPerGame)
 
@@ -35,7 +35,7 @@ func (game *Game) PlayGame() {
 		time.Sleep(1 * time.Second) // Give the player time to prepare for the next round
 	}
 
-	game.Player.DisplaySummary()
+	game.Player.DisplaySummary(game.Player.GetPoints())
 }
 
 func (game *Game) playRound(round int) {

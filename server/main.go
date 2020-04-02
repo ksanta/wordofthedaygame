@@ -46,14 +46,23 @@ func handleNewPlayer(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	p := player.NewWebsocketPlayer(conn)
+	playerComms := player.NewWebsocketCommunication(conn)
+
+	p := player.NewPlayer(playerComms)
+	defer func() {
+		if r := recover(); r != nil {
+			p.Println("Disconnected")
+		}
+	}()
+
+	// todo: consider passing the player *Logger to NewWebSocketComms?
 
 	theGame := game.Game{
 		Words:               words,
 		QuestionsPerGame:    *questionsPerGame,
 		OptionsPerQuestion:  *optionsPerQuestion,
 		DurationPerQuestion: 10 * time.Second,
-		Player:              p,
+		Player:              *p,
 	}
 
 	theGame.PlayGame()

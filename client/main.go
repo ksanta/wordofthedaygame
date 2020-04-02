@@ -141,7 +141,7 @@ func handlePlayerDetailsReqMessage(conn *websocket.Conn) {
 	fmt.Print("Enter your name: ")
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
-	playerDetailsResp := model.PlayerDetailsResp{Name: scanner.Text()}
+	playerDetailsResp := model.PlayerDetails{Name: scanner.Text()}
 
 	err := conn.WriteJSON(model.Message{
 		PlayerDetailsResp: &playerDetailsResp,
@@ -161,8 +161,8 @@ func startWriteLoop(conn *websocket.Conn, done chan struct{}, interrupt chan os.
 		case <-done:
 			return
 		case <-interrupt:
-			log.Println("interrupt")
-
+			fmt.Println()
+			fmt.Println("Closing connection")
 			// Cleanly close the connection by sending a close message and then
 			// waiting (with timeout) for the server to close the connection.
 			err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))

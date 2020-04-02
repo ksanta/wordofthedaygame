@@ -1,12 +1,42 @@
 package player
 
 import (
+	"fmt"
+	"log"
+	"os"
 	"time"
 )
 
-type Player interface {
-	// GetPlayerDetails will prompt the player for some details and save them
-	GetPlayerDetails()
+type Player struct {
+	Comms
+	*log.Logger
+	name   string
+	points int
+}
+
+func NewPlayer(comms Comms) *Player {
+	return &Player{
+		Comms:  comms,
+		Logger: log.New(os.Stdout, "[New player] ", log.Ldate|log.Ltime),
+	}
+}
+
+func (p *Player) AddPoints(points int) {
+	p.points += points
+}
+
+func (p *Player) GetPoints() int {
+	return p.points
+}
+
+func (p *Player) SetName(name string) {
+	p.name = name
+	p.Logger.SetPrefix(fmt.Sprintf("[%s] ", name))
+}
+
+type Comms interface {
+	// GetPlayerDetails will prompt the player for some details and return them
+	GetPlayerDetails() string
 
 	// DisplayIntro will let the player know how many questions will be asked
 	DisplayIntro(questionsPerGame int)
@@ -24,9 +54,5 @@ type Player interface {
 	DisplayProgress(points int)
 
 	// DisplaySummary will show the user the number of points they got in the game
-	DisplaySummary()
-
-	AddPoints(points int)
-
-	GetPoints() int
+	DisplaySummary(totalPoints int)
 }
