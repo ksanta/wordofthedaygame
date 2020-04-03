@@ -21,10 +21,11 @@ var timeoutChan = make(chan struct{})
 
 func main() {
 	flag.Parse()
+	log.SetFlags(0)
 
 	// Direct the interrupt (ctrl-c) signal into a channel for graceful shutdown
-	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt)
+	interruptChan := make(chan os.Signal, 1)
+	signal.Notify(interruptChan, os.Interrupt)
 
 	conn := connectToServer()
 	defer conn.Close()
@@ -33,7 +34,7 @@ func main() {
 	done := startReadLoop(conn)
 
 	// Write loop in current thread
-	startWriteLoop(conn, done, interrupt)
+	startWriteLoop(conn, done, interruptChan)
 }
 
 func connectToServer() *websocket.Conn {
@@ -56,7 +57,9 @@ func startReadLoop(conn *websocket.Conn) chan struct{} {
 			var msg model.Message
 			err := conn.ReadJSON(&msg)
 			if err != nil {
-				log.Println("read error:", err)
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseNormalClosure) {
+					log.Println("abnormal closure:", err)
+				}
 				return
 			}
 
@@ -167,7 +170,7 @@ func startWriteLoop(conn *websocket.Conn, done chan struct{}, interrupt chan os.
 			// waiting (with timeout) for the server to close the connection.
 			err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			if err != nil {
-				log.Println("write close error:", err)
+				// don't care at this point
 				return
 			}
 			select {
