@@ -2,6 +2,7 @@ package player
 
 import (
 	"fmt"
+	"github.com/gorilla/websocket"
 	"log"
 	"os"
 	"time"
@@ -14,9 +15,19 @@ type Player struct {
 	points int
 }
 
-func NewPlayer(comms Comms) *Player {
+func NewWebsocketPlayer(conn *websocket.Conn) *Player {
+	logger := log.New(os.Stdout, "[New player] ", 0)
+	websocketCommunication := NewWebsocketCommunication(conn, logger)
+
 	return &Player{
-		Comms:  comms,
+		Comms:  websocketCommunication,
+		Logger: logger,
+	}
+}
+
+func NewConsolePlayer() *Player {
+	return &Player{
+		Comms:  NewConsoleCommunication(),
 		Logger: log.New(os.Stdout, "[New player] ", log.Ldate|log.Ltime),
 	}
 }

@@ -30,6 +30,7 @@ var words model.Words
 
 func main() {
 	flag.Parse()
+	log.SetFlags(0)
 
 	words = obtainWordsOfTheDay()
 
@@ -46,16 +47,13 @@ func handleNewPlayer(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	playerComms := player.NewWebsocketCommunication(conn)
+	p := player.NewWebsocketPlayer(conn)
 
-	p := player.NewPlayer(playerComms)
 	defer func() {
 		if r := recover(); r != nil {
 			p.Println("Disconnected")
 		}
 	}()
-
-	// todo: consider passing the player *Logger to NewWebSocketComms?
 
 	theGame := game.Game{
 		Words:               words,

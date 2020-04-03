@@ -1,35 +1,30 @@
 package player
 
 import (
-	"fmt"
+	"encoding/json"
 	"github.com/gorilla/websocket"
 	"github.com/ksanta/wordofthedaygame/model"
+	"log"
 	"time"
 )
 
 // WebsocketCommunication is an implementation that communicates to the player via Websockets
 type WebsocketCommunication struct {
 	conn *websocket.Conn
+	*log.Logger
 }
 
-func NewWebsocketCommunication(conn *websocket.Conn) Comms {
-	return &WebsocketCommunication{conn: conn}
+func NewWebsocketCommunication(conn *websocket.Conn, logger *log.Logger) Comms {
+	return &WebsocketCommunication{conn: conn, Logger: logger}
 }
 
 func (wsComm *WebsocketCommunication) GetPlayerDetails() string {
 	request := model.Message{
 		PlayerDetailsReq: &model.PlayerDetailsReq{},
 	}
-	err := wsComm.conn.WriteJSON(request)
-	if err != nil {
-		panic(fmt.Sprint("Send PlayerDetailsReq error:", err))
-	}
+	wsComm.sendJSON(request)
 
-	var response model.Message
-	err = wsComm.conn.ReadJSON(&response)
-	if err != nil {
-		panic(fmt.Sprint("Receive PlayerDetails error:", err))
-	}
+	response := wsComm.receiveJSON()
 
 	return response.PlayerDetailsResp.Name
 }
@@ -40,10 +35,7 @@ func (wsComm *WebsocketCommunication) DisplayIntro(questionsPerGame int) {
 			QuestionsPerGame: questionsPerGame,
 		},
 	}
-	err := wsComm.conn.WriteJSON(msg)
-	if err != nil {
-		panic(fmt.Sprint("Display intro error:", err))
-	}
+	wsComm.sendJSON(msg)
 }
 
 func (wsComm *WebsocketCommunication) PresentQuestion(round int, wordToGuess string, definitions []string, timeoutChan <-chan time.Time) string {
@@ -54,37 +46,32 @@ func (wsComm *WebsocketCommunication) PresentQuestion(round int, wordToGuess str
 			Definitions: definitions,
 		},
 	}
-	err := wsComm.conn.WriteJSON(request)
-	if err != nil {
-		panic(fmt.Sprint("Error presenting question:", err))
-	}
+	wsComm.sendJSON(request)
 
-	responseChan := make(chan string)
-	errorChan := make(chan error)
+	errorChan := make(chan interface{})
+	responseChan := make(chan model.Message)
+
 	go func() {
-		var response model.Message
-		err = wsComm.conn.ReadJSON(&response)
-		if err != nil {
-			errorChan <- err
-			return
-		}
-		responseChan <- response.PlayerResponse.Response
+		defer func() {
+			if r := recover(); r != nil {
+				errorChan <- r
+			}
+		}()
+
+		responseChan <- wsComm.receiveJSON()
 	}()
 
 	select {
 	case err := <-errorChan:
-		panic(fmt.Sprint("Error receiving player response:", err))
+		panic(err)
 		return ""
 	case response := <-responseChan:
-		return response
+		return response.PlayerResponse.Response
 	case <-timeoutChan:
 		timeoutMsg := model.Message{
 			Timeout: &model.Timeout{},
 		}
-		err := wsComm.conn.WriteJSON(timeoutMsg)
-		if err != nil {
-			panic(fmt.Sprint("Error sending timeout:", err))
-		}
+		wsComm.sendJSON(timeoutMsg)
 		// Still wait for user to respond after timeout
 		<-responseChan
 		return ""
@@ -95,20 +82,14 @@ func (wsComm *WebsocketCommunication) DisplayCorrect() {
 	msg := model.Message{
 		Correct: &model.Correct{},
 	}
-	err := wsComm.conn.WriteJSON(msg)
-	if err != nil {
-		panic(fmt.Sprint("Correct error:", err))
-	}
+	wsComm.sendJSON(msg)
 }
 
 func (wsComm *WebsocketCommunication) DisplayWrong() {
 	msg := model.Message{
 		Wrong: &model.Wrong{},
 	}
-	err := wsComm.conn.WriteJSON(msg)
-	if err != nil {
-		panic(fmt.Sprint("Wrong error:", err))
-	}
+	wsComm.sendJSON(msg)
 }
 
 func (wsComm *WebsocketCommunication) DisplayProgress(points int) {
@@ -117,10 +98,7 @@ func (wsComm *WebsocketCommunication) DisplayProgress(points int) {
 			Points: points,
 		},
 	}
-	err := wsComm.conn.WriteJSON(msg)
-	if err != nil {
-		panic(fmt.Sprint("Progress error:", err))
-	}
+	wsComm.sendJSON(msg)
 }
 
 func (wsComm *WebsocketCommunication) DisplaySummary(totalPoints int) {
@@ -129,8 +107,34 @@ func (wsComm *WebsocketCommunication) DisplaySummary(totalPoints int) {
 			TotalPoints: totalPoints,
 		},
 	}
-	err := wsComm.conn.WriteJSON(msg)
+	wsComm.sendJSON(msg)
+}
+
+func (wsComm *WebsocketCommunication) sendJSON(request model.Message) {
+	jsonBytes, err := json.Marshal(request)
 	if err != nil {
-		panic(fmt.Sprint("Summary error:", err))
+		panic(err)
 	}
+
+	wsComm.Print("<- ", string(jsonBytes))
+
+	err = wsComm.conn.WriteMessage(websocket.TextMessage, jsonBytes)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (wsComm *WebsocketCommunication) receiveJSON() model.Message {
+	_, jsonBytes, err := wsComm.conn.ReadMessage()
+	if err != nil {
+		panic(err)
+	}
+	wsComm.Print("-> ", string(jsonBytes))
+
+	var response model.Message
+	err = json.Unmarshal(jsonBytes, &response)
+	if err != nil {
+		panic(err)
+	}
+	return response
 }
