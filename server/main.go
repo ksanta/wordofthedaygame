@@ -24,19 +24,29 @@ var (
 	addr               = flag.String("addr", "localhost:8080", "http service address")
 )
 
-var upgrader = websocket.Upgrader{} // use default options
+var theGame *game.Game
 
-var words model.Words
+var upgrader websocket.Upgrader
 
 func main() {
 	flag.Parse()
 	log.SetFlags(0)
 
-	words = obtainWordsOfTheDay()
+	initialiseTheGame()
 
 	http.HandleFunc("/game", handleNewPlayer)
+	http.HandleFunc("/start", handleStartGame)
 	log.Println("Listening on", *addr)
 	log.Fatal(http.ListenAndServe(*addr, nil))
+}
+
+func initialiseTheGame() {
+	words := obtainWordsOfTheDay()
+	wordsByType := words.GroupByType() // todo: store the words already grouped into the cache
+
+	theGame = game.NewGame(wordsByType, *questionsPerGame, *optionsPerQuestion, 10*time.Second)
+
+	go theGame.Run()
 }
 
 func handleNewPlayer(w http.ResponseWriter, r *http.Request) {
@@ -47,23 +57,25 @@ func handleNewPlayer(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	p := player.NewWebsocketPlayer(conn)
+	p := player.NewPlayer(conn, theGame.UnregisterChan, theGame.MessageChan)
 
-	defer func() {
-		if r := recover(); r != nil {
-			p.Println("Disconnected")
-		}
-	}()
+	go p.ReadPump()
+	go p.WritePump()
 
-	theGame := game.Game{
-		Words:               words,
-		QuestionsPerGame:    *questionsPerGame,
-		OptionsPerQuestion:  *optionsPerQuestion,
-		DurationPerQuestion: 10 * time.Second,
-		Player:              *p,
+	theGame.RegisterChan <- p
+
+	// Lock indefinitely as a test
+	channel := make(chan bool)
+	<-channel
+}
+
+func handleStartGame(w http.ResponseWriter, e *http.Request) {
+	log.Println("Starting game")
+	theGame.StartChan <- struct{}{}
+	_, err := fmt.Fprint(w, "Game started")
+	if err != nil {
+		panic(err)
 	}
-
-	theGame.PlayGame()
 }
 
 func obtainWordsOfTheDay() model.Words {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/ksanta/wordofthedaygame/model"
@@ -23,18 +24,14 @@ func main() {
 	flag.Parse()
 	log.SetFlags(0)
 
-	// Direct the interrupt (ctrl-c) signal into a channel for graceful shutdown
-	interruptChan := make(chan os.Signal, 1)
-	signal.Notify(interruptChan, os.Interrupt)
-
 	conn := connectToServer()
 	defer conn.Close()
 
 	// Read loop in goroutine
-	done := startReadLoop(conn)
+	doneChan := startReadLoop(conn)
 
 	// Write loop in current thread
-	startWriteLoop(conn, done, interruptChan)
+	startWriteLoop(conn, doneChan)
 }
 
 func connectToServer() *websocket.Conn {
@@ -52,13 +49,15 @@ func startReadLoop(conn *websocket.Conn) chan struct{} {
 	done := make(chan struct{})
 
 	go func() {
-		defer close(done)
+		defer func() {
+			log.Println("Read loop closing")
+			close(done)
+		}()
 		for {
-			var msg model.Message
-			err := conn.ReadJSON(&msg)
+			msg, err := receiveJSON(conn)
 			if err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseNormalClosure) {
-					log.Println("abnormal closure:", err)
+					log.Println(err)
 				}
 				return
 			}
@@ -88,7 +87,7 @@ func startReadLoop(conn *websocket.Conn) chan struct{} {
 
 			} else if msg.Summary != nil {
 				handleSummary(msg.Summary)
-
+				return
 			} else {
 				log.Fatal("Unsupported message", msg)
 			}
@@ -130,7 +129,7 @@ func handlePresentQuestionMessage(conn *websocket.Conn, q *model.PresentQuestion
 
 	response := getAnswerFromPlayer()
 
-	err := conn.WriteJSON(model.Message{
+	err := conn.WriteJSON(model.MessageFromPlayer{
 		PlayerResponse: &model.PlayerResponse{
 			Response: response,
 		},
@@ -146,7 +145,7 @@ func handlePlayerDetailsReqMessage(conn *websocket.Conn) {
 	scanner.Scan()
 	playerDetailsResp := model.PlayerDetails{Name: scanner.Text()}
 
-	err := conn.WriteJSON(model.Message{
+	err := conn.WriteJSON(model.MessageFromPlayer{
 		PlayerDetailsResp: &playerDetailsResp,
 	})
 	if err != nil {
@@ -155,17 +154,23 @@ func handlePlayerDetailsReqMessage(conn *websocket.Conn) {
 }
 
 func handleIntroMessage(intro *model.Intro) {
-	fmt.Println("Playing", intro.QuestionsPerGame, "rounds")
+	fmt.Println("Playing", intro.QuestionsPerGame, "rounds.")
+	fmt.Println("Waiting for other players.")
 }
 
-func startWriteLoop(conn *websocket.Conn, done chan struct{}, interrupt chan os.Signal) {
+func startWriteLoop(conn *websocket.Conn, done chan struct{}) {
+	// Direct the interrupt (ctrl-c) signal into a channel for graceful shutdown
+	interruptChan := make(chan os.Signal, 1)
+	signal.Notify(interruptChan, os.Interrupt)
+
 	for {
 		select {
 		case <-done:
+			log.Println("Closing write loop")
 			return
-		case <-interrupt:
+		case <-interruptChan:
 			fmt.Println()
-			fmt.Println("Closing connection")
+			fmt.Println("Caught interrupt. Closing connection.")
 			// Cleanly close the connection by sending a close message and then
 			// waiting (with timeout) for the server to close the connection.
 			err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
@@ -203,4 +208,20 @@ func getAnswerFromPlayer() string {
 		<-stdinChannel
 		return ""
 	}
+}
+
+func receiveJSON(conn *websocket.Conn) (model.MessageToPlayer, error) {
+	_, jsonBytes, err := conn.ReadMessage()
+	if err != nil {
+		return model.MessageToPlayer{}, err
+	}
+	// Uncomment for debugging
+	//log.Print("-> ", string(jsonBytes))
+
+	var response model.MessageToPlayer
+	err = json.Unmarshal(jsonBytes, &response)
+	if err != nil {
+		return model.MessageToPlayer{}, err
+	}
+	return response, nil
 }

@@ -5,6 +5,13 @@ import "math/rand"
 // Words is simply a slice of Word, with handy methods
 type Words []Word
 
+// PickRandomType returns one of four random word types
+func PickRandomType() string {
+	wordTypes := []string{"noun", "adjective", "verb", "adverb"}
+	randomIndex := rand.Intn(len(wordTypes))
+	return wordTypes[randomIndex]
+}
+
 // GroupByType groups this word slice into a map keyed by the type
 func (words Words) GroupByType() map[string]Words {
 	wordsByType := make(map[string]Words)
@@ -14,13 +21,6 @@ func (words Words) GroupByType() map[string]Words {
 	}
 
 	return wordsByType
-}
-
-// PickRandomType returns one of four random word types
-func (words Words) PickRandomType() string {
-	wordTypes := []string{"noun", "adjective", "verb", "adverb"}
-	randomIndex := rand.Intn(len(wordTypes))
-	return wordTypes[randomIndex]
 }
 
 // PickRandomWords will pick n unique random words from this word slice. If it

@@ -1,17 +1,21 @@
 package model
 
-// Message is the only type sent across the network
-type Message struct {
-	PlayerDetailsReq  *PlayerDetailsReq `json:",omitempty"`
-	PlayerDetailsResp *PlayerDetails    `json:",omitempty"`
-	Intro             *Intro            `json:",omitempty"`
-	PresentQuestion   *PresentQuestion  `json:",omitempty"`
-	PlayerResponse    *PlayerResponse   `json:",omitempty"`
-	Timeout           *Timeout          `json:",omitempty"`
-	Correct           *Correct          `json:",omitempty"`
-	Wrong             *Wrong            `json:",omitempty"`
-	Progress          *Progress         `json:",omitempty"`
-	Summary           *Summary          `json:",omitempty"`
+// MessageToPlayer is sent across the network to the client
+type MessageToPlayer struct {
+	PlayerDetailsReq *PlayerDetailsReq `json:",omitempty"`
+	Intro            *Intro            `json:",omitempty"`
+	PresentQuestion  *PresentQuestion  `json:",omitempty"`
+	Timeout          *Timeout          `json:",omitempty"`
+	Correct          *Correct          `json:",omitempty"`
+	Wrong            *Wrong            `json:",omitempty"`
+	Progress         *Progress         `json:",omitempty"`
+	Summary          *Summary          `json:",omitempty"`
+}
+
+// MessageFromPlayer is received from the network from the client
+type MessageFromPlayer struct {
+	PlayerDetailsResp *PlayerDetails  `json:",omitempty"`
+	PlayerResponse    *PlayerResponse `json:",omitempty"`
 }
 
 // PlayerDetailsReq is sent to the client telling it to get the player's details

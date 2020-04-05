@@ -1,66 +1,181 @@
 package game
 
 import (
-	"bufio"
 	"github.com/ksanta/wordofthedaygame/model"
 	"github.com/ksanta/wordofthedaygame/player"
 	"math/rand"
-	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 type Game struct {
-	Words               model.Words
+	WordsByType         map[string]model.Words
 	QuestionsPerGame    int
 	OptionsPerQuestion  int
 	DurationPerQuestion time.Duration
-	WordsByType         map[string]model.Words
-	Player              player.Player
+	RegisterChan        chan *player.Player
+	UnregisterChan      chan *player.Player
+	MessageChan         chan player.PlayerMessage
+	StartChan           chan struct{}
+	players             map[*player.Player]bool
+	waitGroup           sync.WaitGroup
+	wordsInRound        model.Words
+	wordToGuess         string
 }
 
-func (game *Game) PlayGame() {
-	// Randomise the random number generator
+func NewGame(wordsByType map[string]model.Words,
+	questionsPerGame int,
+	optionsPerQuestion int,
+	durationPerQuestion time.Duration) *Game {
 	rand.Seed(time.Now().Unix())
 
-	game.WordsByType = game.Words.GroupByType() // todo: store the words already grouped into the cache
+	return &Game{
+		WordsByType:         wordsByType,
+		QuestionsPerGame:    questionsPerGame,
+		OptionsPerQuestion:  optionsPerQuestion,
+		DurationPerQuestion: durationPerQuestion,
+		RegisterChan:        make(chan *player.Player),
+		UnregisterChan:      make(chan *player.Player),
+		MessageChan:         make(chan player.PlayerMessage),
+		StartChan:           make(chan struct{}),
+		players:             make(map[*player.Player]bool),
+		waitGroup:           sync.WaitGroup{},
+		wordsInRound:        nil,
+		wordToGuess:         "",
+	}
+}
 
-	game.Player.SetName(game.Player.GetPlayerDetails())
+// Run will start listening on its channels. This is meant to be called as a goroutine.
+func (game *Game) Run() {
+	for {
+		select {
+		case p := <-game.RegisterChan:
+			game.players[p] = true
+			game.requestPlayerName(p)
+		case p := <-game.UnregisterChan:
+			if _, ok := game.players[p]; ok {
+				delete(game.players, p)
+				close(p.SendToClientChan)
+			}
+		case <-game.StartChan:
+			go game.PlayGame()
+		case playerMessage := <-game.MessageChan:
+			switch {
+			case playerMessage.Message.PlayerDetailsResp != nil:
+				p := playerMessage.Player
+				p.SetName(playerMessage.Message.PlayerDetailsResp.Name)
+				game.sendIntroToPlayer(p)
+			case playerMessage.Message.PlayerResponse != nil:
+				game.handlePlayerResponse(playerMessage.Player, playerMessage.Message.PlayerResponse.Response)
+			}
+		}
+	}
+}
 
-	game.Player.DisplayIntro(game.QuestionsPerGame)
+func (game *Game) requestPlayerName(p *player.Player) {
+	message := model.MessageToPlayer{
+		PlayerDetailsReq: &model.PlayerDetailsReq{},
+	}
+	p.SendToClientChan <- message
+}
 
+func (game *Game) sendIntroToPlayer(p *player.Player) {
+	// Sending messages to the player must be done via channel
+	p.SendToClientChan <- model.MessageToPlayer{
+		Intro: &model.Intro{QuestionsPerGame: game.QuestionsPerGame},
+	}
+}
+
+// PlayGame orchestrates the rounds of questions and displays the result to all players
+func (game *Game) PlayGame() {
 	for i := 1; i <= game.QuestionsPerGame; i++ {
 		game.playRound(i)
-		time.Sleep(1 * time.Second) // Give the player time to prepare for the next round
+		time.Sleep(1 * time.Second) // Give the players time to prepare for the next round
 	}
 
-	game.Player.DisplaySummary(game.Player.GetPoints())
+	game.sendSummaryToPlayers()
+}
+
+func (game *Game) sendSummaryToPlayers() {
+	for p := range game.players {
+		p.SendToClientChan <- model.MessageToPlayer{
+			Summary: &model.Summary{TotalPoints: p.GetPoints()},
+		}
+	}
 }
 
 func (game *Game) playRound(round int) {
-	wordType := game.Words.PickRandomType()
-	wordsInRound := game.WordsByType[wordType].PickRandomWords(game.OptionsPerQuestion)
+	wordType := model.PickRandomType()
 
-	wordToGuess := wordsInRound.PickRandomWord().Word
-	definitions := wordsInRound.GetDefinitions()
-	timeoutChan := time.After(game.DurationPerQuestion)
+	game.wordsInRound = game.WordsByType[wordType].PickRandomWords(game.OptionsPerQuestion)
+	game.wordToGuess = game.wordsInRound.PickRandomWord().Word
 
-	startTime := time.Now()
-	response := game.Player.PresentQuestion(round, wordToGuess, definitions, timeoutChan)
-	elapsedTime := time.Since(startTime)
+	definitions := game.wordsInRound.GetDefinitions()
 
-	correct := validateResponse(response, wordsInRound, wordToGuess)
+	// Set Game wait group to player count
+	game.waitGroup.Add(len(game.players))
+
+	// For each player
+	for p := range game.players {
+		//   Start player timer
+		p.StartTimer()
+
+		//   Send question
+		p.SendToClientChan <- model.MessageToPlayer{
+			PresentQuestion: &model.PresentQuestion{
+				Round:       round,
+				WordToGuess: game.wordToGuess,
+				Definitions: definitions,
+			},
+		}
+	}
+	// Wait for wait group
+	game.waitGroup.Wait()
+}
+
+func (game *Game) handlePlayerResponse(p *player.Player, response string) {
+	elapsedTime := p.StopTimer()
+
+	correct := game.validateResponse(response)
+
 	if correct {
-		game.Player.DisplayCorrect()
+		p.SendToClientChan <- model.MessageToPlayer{
+			Correct: &model.Correct{},
+		}
 	} else {
-		game.Player.DisplayWrong()
+		p.SendToClientChan <- model.MessageToPlayer{
+			Wrong: &model.Wrong{},
+		}
 	}
 
 	points := game.calculatePoints(correct, elapsedTime)
-	game.Player.DisplayProgress(points)
+	p.AddPoints(points)
 
-	game.Player.AddPoints(points)
+	p.SendToClientChan <- model.MessageToPlayer{
+		Progress: &model.Progress{Points: points},
+	}
+
+	game.waitGroup.Done()
+}
+
+func (game *Game) validateResponse(response string) bool {
+	// If the response doesn't convert to an integer, it's wrong
+	responseNum, err := strconv.Atoi(strings.TrimSpace(response))
+	if err != nil {
+		return false
+	}
+
+	index := responseNum - 1
+
+	// If the response is out of range, it's wrong
+	if index < 0 || index >= len(game.wordsInRound) {
+		return false
+	}
+
+	// Compare the response to the correct answer
+	return game.wordsInRound[index].Word == game.wordToGuess
 }
 
 func (game *Game) calculatePoints(correct bool, elapsedTime time.Duration) int {
@@ -77,42 +192,4 @@ func (game *Game) calculatePoints(correct bool, elapsedTime time.Duration) int {
 	}
 
 	return points
-}
-
-func validateResponse(response string, words model.Words, correctWord string) bool {
-	// If the response doesn't convert to an integer, it's wrong
-	responseNum, err := strconv.Atoi(strings.TrimSpace(response))
-	if err != nil {
-		return false
-	}
-
-	index := responseNum - 1
-
-	// If the response is out of range, it's wrong
-	if index < 0 || index >= len(words) {
-		return false
-	}
-
-	// Compare the response to the correct answer
-	return words[index].Word == correctWord
-}
-
-func (game *Game) getAnswerFromPlayer() (response string, channelForReuse chan string) {
-	stdinChannel := make(chan string, 1)
-
-	// Get the answer  from the player in a different goroutine and send to the channel
-	go func() {
-		scanner := bufio.NewScanner(os.Stdin)
-		scanner.Scan()
-		stdinChannel <- scanner.Text()
-	}()
-
-	select {
-	case response = <-stdinChannel:
-		return response, nil
-	case <-time.After(game.DurationPerQuestion):
-		// On timeout, the goroutine is still blocked waiting for user input.
-		// In this case, return it so the user can be prompted to hit enter to finish the goroutine
-		return "", stdinChannel
-	}
 }
