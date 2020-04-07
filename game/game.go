@@ -19,10 +19,11 @@ type Game struct {
 	UnregisterChan      chan *player.Player
 	MessageChan         chan player.PlayerMessage
 	StartChan           chan struct{}
-	players             map[*player.Player]bool
+	players             player.Players
 	waitGroup           sync.WaitGroup
 	wordsInRound        model.Words
 	wordToGuess         string
+	gameInProgress      bool
 }
 
 func NewGame(wordsByType map[string]model.Words,
@@ -40,10 +41,11 @@ func NewGame(wordsByType map[string]model.Words,
 		UnregisterChan:      make(chan *player.Player),
 		MessageChan:         make(chan player.PlayerMessage),
 		StartChan:           make(chan struct{}),
-		players:             make(map[*player.Player]bool),
+		players:             make([]*player.Player, 0, 10),
 		waitGroup:           sync.WaitGroup{},
 		wordsInRound:        nil,
 		wordToGuess:         "",
+		gameInProgress:      false,
 	}
 }
 
@@ -52,13 +54,15 @@ func (game *Game) Run() {
 	for {
 		select {
 		case p := <-game.RegisterChan:
-			game.players[p] = true
+			if game.gameInProgress {
+				// todo message/call to player to try again later
+			}
+			game.players = append(game.players, p)
 			game.requestPlayerName(p)
 		case p := <-game.UnregisterChan:
-			if _, ok := game.players[p]; ok {
-				delete(game.players, p)
-				close(p.SendToClientChan)
-			}
+			p.Active = false
+			close(p.SendToClientChan)
+			game.waitGroup.Done()
 		case <-game.StartChan:
 			go game.PlayGame()
 		case playerMessage := <-game.MessageChan:
@@ -66,6 +70,7 @@ func (game *Game) Run() {
 			case playerMessage.Message.PlayerDetailsResp != nil:
 				p := playerMessage.Player
 				p.SetName(playerMessage.Message.PlayerDetailsResp.Name)
+				p.Active = true
 				game.sendIntroToPlayer(p)
 			case playerMessage.Message.PlayerResponse != nil:
 				game.handlePlayerResponse(playerMessage.Player, playerMessage.Message.PlayerResponse.Response)
@@ -93,11 +98,14 @@ func (game *Game) PlayGame() {
 	maxScore := 0
 	for maxScore <= game.TargetScore {
 		game.playRound()
-		maxScore = game.maxScore()
+		maxScore = game.players.MaxScore()
 		time.Sleep(2 * time.Second) // Give the players time to prepare for the next round
 	}
 
 	game.sendSummaryToPlayers()
+
+	// todo: remove all players at the end of the game?
+	// todo: split up static/dynamic game fields?
 }
 
 func (game *Game) playRound() {
@@ -110,11 +118,13 @@ func (game *Game) playRound() {
 }
 
 func (game *Game) sendSummaryToPlayers() {
-	for p := range game.players {
+	sendSummary := func(p *player.Player) {
 		p.SendToClientChan <- model.MessageToPlayer{
 			Summary: &model.Summary{TotalPoints: p.GetPoints()},
 		}
 	}
+
+	game.players.ForActivePlayers(sendSummary)
 }
 
 func (game *Game) sendQuestionToEachPlayer() {
@@ -126,7 +136,7 @@ func (game *Game) sendQuestionToEachPlayer() {
 	definitions := game.wordsInRound.GetDefinitions()
 
 	// Wait group keeps track of how many responses to wait for
-	game.waitGroup.Add(len(game.players))
+	game.waitGroup.Add(game.players.NumActivePlayers())
 
 	questionMsg := model.MessageToPlayer{
 		PresentQuestion: &model.PresentQuestion{
@@ -136,36 +146,33 @@ func (game *Game) sendQuestionToEachPlayer() {
 		},
 	}
 
-	for p := range game.players {
+	sendQuestion := func(p *player.Player) {
 		p.StartTimer()
 		p.SendToClientChan <- questionMsg
 	}
+
+	game.players.ForActivePlayers(sendQuestion)
 }
 
 func (game *Game) sendRoundSummaryToEachPlayer() {
 
 	playerStates := make([]model.PlayerState, 0, len(game.players))
 
-	// todo: maintain consistent ordering
-	for p := range game.players {
-		// todo: consider moving this to a method on Player
-		playerState := model.PlayerState{
-			Name:  p.GetName(),
-			Score: p.GetPoints(),
-			Alive: true,
-		}
-		playerStates = append(playerStates, playerState)
+	for _, p := range game.players {
+		playerStates = append(playerStates, p.PlayerState())
 	}
 
-	msg := model.MessageToPlayer{
+	roundSummary := model.MessageToPlayer{
 		RoundSummary: &model.RoundSummary{
 			PlayerStates: playerStates,
 		},
 	}
 
-	for p := range game.players {
-		p.SendToClientChan <- msg
+	sendRoundSummary := func(p *player.Player) {
+		p.SendToClientChan <- roundSummary
 	}
+
+	game.players.ForActivePlayers(sendRoundSummary)
 }
 
 func (game *Game) handlePlayerResponse(p *player.Player, response string) {
@@ -219,16 +226,4 @@ func (game *Game) calculatePoints(correct bool, elapsedTime time.Duration) int {
 	}
 
 	return correctPoints + timePoints
-}
-
-func (game *Game) maxScore() int {
-	maxScore := 0
-
-	for p := range game.players {
-		if p.GetPoints() > maxScore {
-			maxScore = p.GetPoints()
-		}
-	}
-
-	return maxScore
 }

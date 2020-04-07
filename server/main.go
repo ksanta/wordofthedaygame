@@ -42,7 +42,7 @@ func main() {
 
 func initialiseTheGame() {
 	words := obtainWordsOfTheDay()
-	wordsByType := words.GroupByType() // todo: store the words already grouped into the cache
+	wordsByType := words.GroupByType()
 
 	theGame = game.NewGame(wordsByType, *targetScore, *optionsPerQuestion, 10*time.Second)
 

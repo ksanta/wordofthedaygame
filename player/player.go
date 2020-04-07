@@ -19,6 +19,9 @@ type Player struct {
 	*log.Logger
 	// The Websocket connection
 	conn *websocket.Conn
+	// Whether the player has an active connection. Connection could go dead mid-game
+	// and the show must go on!
+	Active bool
 	// Posting here will unregister this player
 	unregisterChan chan *Player
 	// Posting here will send the message to the game hub
@@ -153,4 +156,12 @@ func (p *Player) receiveJSON() (model.MessageFromPlayer, error) {
 		return model.MessageFromPlayer{}, err
 	}
 	return response, nil
+}
+
+func (p *Player) PlayerState() model.PlayerState {
+	return model.PlayerState{
+		Name:   p.GetName(),
+		Score:  p.GetPoints(),
+		Active: p.Active,
+	}
 }

@@ -52,9 +52,9 @@ type RoundSummary struct {
 }
 
 type PlayerState struct {
-	Name  string
-	Score int
-	Alive bool
+	Name   string
+	Score  int
+	Active bool
 }
 
 // Summary is sent to the client at the end telling the player the final result
