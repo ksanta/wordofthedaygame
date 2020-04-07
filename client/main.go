@@ -73,21 +73,16 @@ func startReadLoop(conn *websocket.Conn) chan struct{} {
 				// Run in separate goroutine, so we can listen for timeout msg too
 				go handlePresentQuestionMessage(conn, msg.PresentQuestion)
 
-			} else if msg.Timeout != nil {
-				handleTimeoutMessage()
+			} else if msg.PlayerResult != nil {
+				handlePlayersResult(msg.PlayerResult)
 
-			} else if msg.Correct != nil {
-				handleCorrect()
-
-			} else if msg.Wrong != nil {
-				handleWrong()
-
-			} else if msg.Progress != nil {
-				handleProgress(msg.Progress)
+			} else if msg.RoundSummary != nil {
+				handleRoundSummary(msg.RoundSummary)
 
 			} else if msg.Summary != nil {
 				handleSummary(msg.Summary)
 				return
+
 			} else {
 				log.Fatal("Unsupported message", msg)
 			}
@@ -96,16 +91,21 @@ func startReadLoop(conn *websocket.Conn) chan struct{} {
 	return done
 }
 
-func handleCorrect() {
-	fmt.Println("Correct 🎉")
+func handlePlayersResult(result *model.PlayerResult) {
+	fmt.Println()
+	if result.Correct {
+		fmt.Print("✅ ")
+	} else {
+		fmt.Print("❌ ")
+	}
+	fmt.Printf("Earned %d points\n", result.Points)
 }
 
-func handleWrong() {
-	fmt.Println("Wrong! 💀💀💀")
-}
-
-func handleProgress(progress *model.Progress) {
-	fmt.Printf("Earned %d points\n", progress.Points)
+func handleRoundSummary(summary *model.RoundSummary) {
+	fmt.Println("Results for all players:")
+	for _, playerStatus := range summary.PlayerStates {
+		fmt.Printf("%-10s: %d\n", playerStatus.Name, playerStatus.Score)
+	}
 }
 
 func handleSummary(summary *model.Summary) {
@@ -113,13 +113,8 @@ func handleSummary(summary *model.Summary) {
 	fmt.Println("You scored", summary.TotalPoints, "points!")
 }
 
-func handleTimeoutMessage() {
-	timeoutChan <- struct{}{}
-}
-
 func handlePresentQuestionMessage(conn *websocket.Conn, q *model.PresentQuestion) {
 	fmt.Println()
-	fmt.Printf("Round %d!\n", q.Round)
 	fmt.Println("The word of the day is:", strings.ToUpper(q.WordToGuess))
 
 	for i, definition := range q.Definitions {
@@ -154,7 +149,7 @@ func handlePlayerDetailsReqMessage(conn *websocket.Conn) {
 }
 
 func handleIntroMessage(intro *model.Intro) {
-	fmt.Println("Playing", intro.QuestionsPerGame, "rounds.")
+	fmt.Println("Playing for", intro.TargetScore, "points.")
 	fmt.Println("Waiting for other players.")
 }
 

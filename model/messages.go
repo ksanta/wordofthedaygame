@@ -5,10 +5,8 @@ type MessageToPlayer struct {
 	PlayerDetailsReq *PlayerDetailsReq `json:",omitempty"`
 	Intro            *Intro            `json:",omitempty"`
 	PresentQuestion  *PresentQuestion  `json:",omitempty"`
-	Timeout          *Timeout          `json:",omitempty"`
-	Correct          *Correct          `json:",omitempty"`
-	Wrong            *Wrong            `json:",omitempty"`
-	Progress         *Progress         `json:",omitempty"`
+	PlayerResult     *PlayerResult     `json:",omitempty"`
+	RoundSummary     *RoundSummary     `json:",omitempty"`
 	Summary          *Summary          `json:",omitempty"`
 }
 
@@ -28,14 +26,14 @@ type PlayerDetails struct {
 
 // Intro tells the client to display an intro to the player
 type Intro struct {
-	QuestionsPerGame int
+	TargetScore int
 }
 
 // PresentQuestion is sent to the client telling it to pose a question to the player
 type PresentQuestion struct {
-	Round       int
-	WordToGuess string
-	Definitions []string
+	WordToGuess    string
+	Definitions    []string
+	SecondsAllowed int
 }
 
 // PlayerResponse is the response from the player
@@ -43,18 +41,20 @@ type PlayerResponse struct {
 	Response string
 }
 
-// Timeout is sent to the client telling it the player took too long to answer the question
-type Timeout struct{}
+// PlayerResult is sent to the player telling them their result of the round
+type PlayerResult struct {
+	Correct bool
+	Points  int
+}
 
-// Correct is sent to the client telling it the player guessed correctly
-type Correct struct{}
+type RoundSummary struct {
+	PlayerStates []PlayerState
+}
 
-// Correct is sent to the client telling it the player guessed wrong
-type Wrong struct{}
-
-// Progress is sent to the client telling it the incremental progress between rounds
-type Progress struct {
-	Points int
+type PlayerState struct {
+	Name  string
+	Score int
+	Alive bool
 }
 
 // Summary is sent to the client at the end telling the player the final result

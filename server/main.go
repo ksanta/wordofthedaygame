@@ -18,8 +18,8 @@ import (
 var (
 	cacheType          = flag.String("cacheType", "file", "Must be 'file' for now")
 	cacheFile          = flag.String("cache", "words.cache", "Cache file name")
-	limit              = flag.Int("limit", 3000, "The number of definitions to scrape")
-	questionsPerGame   = flag.Int("questionsPerGame", 5, "Number of questions per game")
+	cacheLimit         = flag.Int("cacheLimit", 3000, "The max number of words to cache")
+	targetScore        = flag.Int("targetScore", 500, "Player wins when target score is reached")
 	optionsPerQuestion = flag.Int("optionsPerQuestion", 3, "Number of options per question")
 	addr               = flag.String("addr", "localhost:8080", "http service address")
 )
@@ -44,7 +44,7 @@ func initialiseTheGame() {
 	words := obtainWordsOfTheDay()
 	wordsByType := words.GroupByType() // todo: store the words already grouped into the cache
 
-	theGame = game.NewGame(wordsByType, *questionsPerGame, *optionsPerQuestion, 10*time.Second)
+	theGame = game.NewGame(wordsByType, *targetScore, *optionsPerQuestion, 10*time.Second)
 
 	go theGame.Run()
 }
@@ -97,17 +97,17 @@ func obtainWordsOfTheDay() model.Words {
 func scrapeAndPopulateCache(myCache cache.Cache) model.Words {
 	fmt.Println("Scraping words from the web (please wait)")
 
-	var words = make(model.Words, 0, *limit)
+	var words = make(model.Words, 0, *cacheLimit)
 
 	// Start a producer of words
-	myScraper := scraper.NewMeriamScraper(*limit)
+	myScraper := scraper.NewMeriamScraper(*cacheLimit)
 	incomingWordChannel := myScraper.Scrape()
 
 	// Create a channel that will be used to write words to the cache
 	cacheChannel := myCache.CreateCacheWriter()
 
 	// Start a consumer that will show percentage progress to the user
-	progressChannel := createConsumerThatShowsPercentageComplete(*limit)
+	progressChannel := createConsumerThatShowsPercentageComplete(*cacheLimit)
 
 	// Capture the word into an array, and send it onwards to the CSV writer
 	for word := range incomingWordChannel {

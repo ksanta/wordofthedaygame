@@ -12,7 +12,7 @@ import (
 
 type Game struct {
 	WordsByType         map[string]model.Words
-	QuestionsPerGame    int
+	TargetScore         int
 	OptionsPerQuestion  int
 	DurationPerQuestion time.Duration
 	RegisterChan        chan *player.Player
@@ -26,14 +26,14 @@ type Game struct {
 }
 
 func NewGame(wordsByType map[string]model.Words,
-	questionsPerGame int,
+	targetScore int,
 	optionsPerQuestion int,
 	durationPerQuestion time.Duration) *Game {
 	rand.Seed(time.Now().Unix())
 
 	return &Game{
 		WordsByType:         wordsByType,
-		QuestionsPerGame:    questionsPerGame,
+		TargetScore:         targetScore,
 		OptionsPerQuestion:  optionsPerQuestion,
 		DurationPerQuestion: durationPerQuestion,
 		RegisterChan:        make(chan *player.Player),
@@ -84,18 +84,29 @@ func (game *Game) requestPlayerName(p *player.Player) {
 func (game *Game) sendIntroToPlayer(p *player.Player) {
 	// Sending messages to the player must be done via channel
 	p.SendToClientChan <- model.MessageToPlayer{
-		Intro: &model.Intro{QuestionsPerGame: game.QuestionsPerGame},
+		Intro: &model.Intro{TargetScore: game.TargetScore},
 	}
 }
 
 // PlayGame orchestrates the rounds of questions and displays the result to all players
 func (game *Game) PlayGame() {
-	for i := 1; i <= game.QuestionsPerGame; i++ {
-		game.playRound(i)
-		time.Sleep(1 * time.Second) // Give the players time to prepare for the next round
+	maxScore := 0
+	for maxScore <= game.TargetScore {
+		game.playRound()
+		maxScore = game.maxScore()
+		time.Sleep(2 * time.Second) // Give the players time to prepare for the next round
 	}
 
 	game.sendSummaryToPlayers()
+}
+
+func (game *Game) playRound() {
+	game.sendQuestionToEachPlayer()
+
+	// Wait for all players to send in their responses
+	game.waitGroup.Wait()
+
+	game.sendRoundSummaryToEachPlayer()
 }
 
 func (game *Game) sendSummaryToPlayers() {
@@ -106,7 +117,7 @@ func (game *Game) sendSummaryToPlayers() {
 	}
 }
 
-func (game *Game) playRound(round int) {
+func (game *Game) sendQuestionToEachPlayer() {
 	wordType := model.PickRandomType()
 
 	game.wordsInRound = game.WordsByType[wordType].PickRandomWords(game.OptionsPerQuestion)
@@ -114,25 +125,47 @@ func (game *Game) playRound(round int) {
 
 	definitions := game.wordsInRound.GetDefinitions()
 
-	// Set Game wait group to player count
+	// Wait group keeps track of how many responses to wait for
 	game.waitGroup.Add(len(game.players))
 
-	// For each player
-	for p := range game.players {
-		//   Start player timer
-		p.StartTimer()
-
-		//   Send question
-		p.SendToClientChan <- model.MessageToPlayer{
-			PresentQuestion: &model.PresentQuestion{
-				Round:       round,
-				WordToGuess: game.wordToGuess,
-				Definitions: definitions,
-			},
-		}
+	questionMsg := model.MessageToPlayer{
+		PresentQuestion: &model.PresentQuestion{
+			WordToGuess:    game.wordToGuess,
+			Definitions:    definitions,
+			SecondsAllowed: int(game.DurationPerQuestion.Seconds()),
+		},
 	}
-	// Wait for wait group
-	game.waitGroup.Wait()
+
+	for p := range game.players {
+		p.StartTimer()
+		p.SendToClientChan <- questionMsg
+	}
+}
+
+func (game *Game) sendRoundSummaryToEachPlayer() {
+
+	playerStates := make([]model.PlayerState, 0, len(game.players))
+
+	// todo: maintain consistent ordering
+	for p := range game.players {
+		// todo: consider moving this to a method on Player
+		playerState := model.PlayerState{
+			Name:  p.GetName(),
+			Score: p.GetPoints(),
+			Alive: true,
+		}
+		playerStates = append(playerStates, playerState)
+	}
+
+	msg := model.MessageToPlayer{
+		RoundSummary: &model.RoundSummary{
+			PlayerStates: playerStates,
+		},
+	}
+
+	for p := range game.players {
+		p.SendToClientChan <- msg
+	}
 }
 
 func (game *Game) handlePlayerResponse(p *player.Player, response string) {
@@ -140,21 +173,15 @@ func (game *Game) handlePlayerResponse(p *player.Player, response string) {
 
 	correct := game.validateResponse(response)
 
-	if correct {
-		p.SendToClientChan <- model.MessageToPlayer{
-			Correct: &model.Correct{},
-		}
-	} else {
-		p.SendToClientChan <- model.MessageToPlayer{
-			Wrong: &model.Wrong{},
-		}
-	}
-
 	points := game.calculatePoints(correct, elapsedTime)
 	p.AddPoints(points)
 
+	// Immediately send the result to the player
 	p.SendToClientChan <- model.MessageToPlayer{
-		Progress: &model.Progress{Points: points},
+		PlayerResult: &model.PlayerResult{
+			Correct: correct,
+			Points:  points,
+		},
 	}
 
 	game.waitGroup.Done()
@@ -179,17 +206,29 @@ func (game *Game) validateResponse(response string) bool {
 }
 
 func (game *Game) calculatePoints(correct bool, elapsedTime time.Duration) int {
-	points := 0
+	correctPoints := 0
 
 	if correct {
-		points += 100
+		correctPoints += 100
 	}
 
-	points += int(100 * (game.DurationPerQuestion - elapsedTime) / game.DurationPerQuestion)
+	timePoints := int(100 * (game.DurationPerQuestion - elapsedTime) / game.DurationPerQuestion)
 
-	if points < 0 {
-		points = 0
+	if timePoints < 0 {
+		timePoints = 0
 	}
 
-	return points
+	return correctPoints + timePoints
+}
+
+func (game *Game) maxScore() int {
+	maxScore := 0
+
+	for p := range game.players {
+		if p.GetPoints() > maxScore {
+			maxScore = p.GetPoints()
+		}
+	}
+
+	return maxScore
 }

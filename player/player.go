@@ -81,8 +81,6 @@ func (p *Player) ReadPump() {
 	defer func() {
 		p.Println("Unregistering", p.name)
 		p.unregisterChan <- p
-		//p.Println("Closing connection!")
-		//p.conn.Close()
 	}()
 
 	for {
@@ -114,8 +112,16 @@ func (p *Player) SetName(name string) {
 	p.Logger.SetPrefix(fmt.Sprintf("[%s] ", name))
 }
 
+func (p *Player) GetName() string {
+	return p.name
+}
+
 func (p *Player) StartTimer() {
 	p.startTime = time.Now()
+}
+
+func (p *Player) StopTimer() time.Duration {
+	return time.Since(p.startTime)
 }
 
 func (p *Player) sendJSON(request model.MessageToPlayer) error {
@@ -147,8 +153,4 @@ func (p *Player) receiveJSON() (model.MessageFromPlayer, error) {
 		return model.MessageFromPlayer{}, err
 	}
 	return response, nil
-}
-
-func (p *Player) StopTimer() time.Duration {
-	return time.Since(p.startTime)
 }

@@ -15,7 +15,7 @@ var words = model.Words{
 func TestGame_CalculatePoints(t *testing.T) {
 	g := Game{
 		Words:               nil,
-		QuestionsPerGame:    5,
+		TargetScore:         5,
 		OptionsPerQuestion:  3,
 		DurationPerQuestion: 10 * time.Second,
 	}
