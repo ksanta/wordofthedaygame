@@ -12,8 +12,8 @@ The simplest way to play the game is to use Docker. This way, you don't even nee
 ```shell script
 docker build -t ksanta/wordofthedaygame .
 
-# This step can take a few minutes as it scrapes the dictionary website for all the words of the day.
-docker run -it --name wordofthedaygame ksanta/wordofthedaygame
+# This step starts and runs the game. It can take a few minutes as it scrapes words of the day from the web.
+docker run --name wordofthedaygame -p 8080:8080 ksanta/wordofthedaygame
 
 # Once the container is created with all the words pre-cached, run this to play the game
 docker start -i wordofthedaygame
@@ -21,7 +21,7 @@ docker start -i wordofthedaygame
 
 # Development
 This is an optional step and only needed during local development. Skip this if all you want to do is to play the game.
-Go 1.13 is required to build the binary.
+Go is required to build the binary.
 ```shell script
-go build
+go run server/main.go
 ````

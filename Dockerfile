@@ -11,12 +11,14 @@ WORKDIR /go/src/github.com/ksanta/wordofthedaygame
 COPY . .
 
 # Build the "server-app" binary
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server-app server/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app server/main.go
 
 # Start a new stage from scratch
 FROM alpine:latest
 
 # Copy the pre-built binary file from the previous stage
-COPY --from=builder /go/src/github.com/ksanta/wordofthedaygame/server-app /usr/local/bin
+COPY --from=builder /go/src/github.com/ksanta/wordofthedaygame/app /game/app
+COPY static /game/static
 
-ENTRYPOINT ["server-app"]
+WORKDIR /game
+ENTRYPOINT ["/game/app"]
