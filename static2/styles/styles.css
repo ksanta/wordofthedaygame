@@ -1,0 +1,249 @@
+body {
+  background: lightblue;
+  position: relative;
+  font-family: 'Sancreek', cursive;
+}
+
+h1 {
+  text-align: center;
+  font-size: 40px;
+}
+
+table.track{
+  background-image: url("../images/background.png");
+  background-width: cover;
+  height: 50px;
+  width: 85%;
+}
+
+#question-area{
+  background-color: #ffffff;
+  position:absolute;
+  right: 10px;
+  top: 50px;
+  width: 14%;
+}
+
+td {
+  border-top: 1px solid darkgreen;
+  border-bottom: 1px solid darkgreen;
+  height: 100px;
+  width: 1%;
+}
+
+.form-control {
+  max-width: 250px;
+  margin: auto auto 5px 5px;
+}
+
+.choiceSet {
+  width: 50%;
+  padding: 10px 10px 20px 30px;
+}
+
+.leftChoice {
+  float: left;
+  border-right: 1px solid lightgrey;
+}
+
+.rightChoice {
+  float: right;
+}
+
+.bottomChoice {
+  border-top: 1px solid lightgrey;
+}
+
+.submit {
+  display: block;
+  clear: both;
+  margin: 5px;
+}
+
+textarea { 
+    border: none; 
+    width: 100%;
+    height: 100%;
+    font-family: 'Roboto', sans-serif;
+    font-size: 25px; 
+}
+
+.empty {
+  display: none;
+}
+
+.reset {
+  margin: -50px auto auto 85%;
+  display: inline-block;
+}
+
+/* Every other horse is raised to simulate galloping*/
+.up {
+  margin: auto auto 0px auto;
+}
+
+td{
+  white-space:pre
+}
+
+.scoreboard {
+    text-align: center;
+    font-size: 20px;
+    line-height: 10px;
+    margin: 5px;
+}
+
+.mini {
+  height: 50px;
+  margin: -20px auto auto auto;
+}
+
+.finish {
+  background-image: url("../images/checker.gif");
+  border-top: 1px solid grey;
+  border-bottom: 1px solid grey;
+}
+
+.scoreboard tr td {
+  border: 1px solid black;
+  background: lightgrey;
+}
+
+#buttonHolder {
+  text-align: center;
+}
+
+#selections {
+  z-index: 2;
+  position: absolute;
+  width: 50%;
+  margin: auto 25% auto 25%;
+  top: 10px;
+  border: 1px solid grey;
+  background: white;
+  border-radius: 5px;
+  padding: 10px;
+}
+
+#selections img {
+  width: 25%;
+  max-width: 100px;
+  border: 1px solid lightgrey;
+  border-radius: 5px;
+  margin: 0 5px;
+}
+
+#selections h2 {
+  font-size: 20px;
+}
+
+#selections .btn {
+  padding: 5px;
+  margin: 5px;
+}
+
+#countDownBox {
+  z-index: 1;
+  position: absolute;
+  top: 20px;
+  border: 1px solid grey;
+  background: white;
+  border-radius: 5px;
+  padding: 10px;
+  text-align: center;
+  width: 100%;
+}
+
+#countDownBox h1 {
+  font-size: 80px;
+}
+
+#countDownBox p {
+  font-size: 18px;
+}
+
+#howTo {
+  font-size: 16px;
+  padding: 5px 10px;
+  text-align: center;
+}
+
+#whoWon {
+  position: absolute;
+  top: 150px;
+  left: 25%;
+  border: 1px solid grey;
+  background-color: white;
+  background-image: url("../images/wreath.jpeg");
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 5px;
+  padding: 10px;
+  width: 50%;
+  text-align: center;
+}
+
+#whoWon .reset {
+  margin: auto auto auto 50%;
+  display: inline-block;
+}
+
+#circle {
+  border: 2px dotted grey;
+  max-width: 125px;
+  border-radius: 500px;
+  margin: 0 auto;
+  padding: 2px;
+}
+
+.horse-selected{
+   box-shadow:0px 12px 22px 1px #333;
+}
+
+.alt-selected{
+   box-shadow:0px 12px 22px 1px #333;
+   background-color: papayawhip;
+}
+
+.button {
+    background-color: #7db9e8;
+    background: -webkit-linear-gradient(#7db9e8, #51A1E0);
+    background: linear-gradient(#7db9e8, #51A1E0);
+    border: solid 1px #1E5799;
+    border-radius: 3px;
+    box-sizing: border-box;
+    box-shadow: inset 0 0 1px #fff;
+    color: #fff;
+    cursor: pointer;
+    display: inline-block;
+    font: bold 14px/32px'Open Sans', sans-serif;
+    height: 34px;
+    outline: none;
+    padding: 0 25px;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    text-shadow: 1px 1px 1px #1E5799;
+    width: 100%;
+}
+.button:hover {
+    background-color: #51A1E0;
+    background: -webkit-linear-gradient(#51A1E0, #2689D7);
+    background: linear-gradient(#51A1E0, #2689D7);
+    border: solid 1px #1A4B84;
+    box-shadow: inset 0 0 2px #fff;
+}
+.button:active {
+    position: relative;
+    top: 1px;
+}
+.button:focus {
+    border: solid 1px #000;
+}
+.button[disabled] {
+    background: #ccc;
+    border: solid 1px #888;
+    color: #999;
+    cursor: default;
+    text-shadow: 1px 1px 1px #fff;
+}
