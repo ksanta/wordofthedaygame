@@ -3,7 +3,7 @@ package model
 // MessageToPlayer is sent across the network to the client
 type MessageToPlayer struct {
 	PlayerDetailsReq *PlayerDetailsReq `json:",omitempty"`
-	Intro            *Intro            `json:",omitempty"`
+	Welcome          *Welcome          `json:",omitempty"`
 	PresentQuestion  *PresentQuestion  `json:",omitempty"`
 	PlayerResult     *PlayerResult     `json:",omitempty"`
 	RoundSummary     *RoundSummary     `json:",omitempty"`
@@ -22,10 +22,11 @@ type PlayerDetailsReq struct{}
 // PlayerDetails is sent to the server with player details when they start the game
 type PlayerDetails struct {
 	Name string
+	Icon string
 }
 
-// Intro tells the client to display an intro to the player
-type Intro struct {
+// Welcome tells the client to display an intro to the player
+type Welcome struct {
 	TargetScore int
 }
 
@@ -53,11 +54,14 @@ type RoundSummary struct {
 
 type PlayerState struct {
 	Name   string
+	Icon   string
 	Score  int
 	Active bool
 }
 
 // Summary is sent to the client at the end telling the player the final result
 type Summary struct {
+	Winner      string
+	Icon        string
 	TotalPoints int
 }

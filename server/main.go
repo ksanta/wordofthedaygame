@@ -34,6 +34,8 @@ func main() {
 
 	initialiseTheGame()
 
+	fs := http.FileServer(http.Dir("./static"))
+	http.Handle("/", fs)
 	http.HandleFunc("/game", handleNewPlayer)
 	http.HandleFunc("/start", handleStartGame)
 	log.Println("Listening on", *addr)
@@ -62,7 +64,7 @@ func handleNewPlayer(w http.ResponseWriter, r *http.Request) {
 	go p.ReadPump()
 	go p.WritePump()
 
-	theGame.RegisterChan <- p
+	//theGame.RegisterChan <- p
 
 	// Lock indefinitely as a test
 	channel := make(chan bool)

@@ -15,15 +15,15 @@ type Game struct {
 	TargetScore         int
 	OptionsPerQuestion  int
 	DurationPerQuestion time.Duration
-	RegisterChan        chan *player.Player
-	UnregisterChan      chan *player.Player
-	MessageChan         chan player.PlayerMessage
-	StartChan           chan struct{}
-	players             player.Players
-	waitGroup           sync.WaitGroup
-	wordsInRound        model.Words
-	wordToGuess         string
-	gameInProgress      bool
+	//RegisterChan        chan *player.Player
+	UnregisterChan chan *player.Player
+	MessageChan    chan player.PlayerMessage
+	StartChan      chan struct{}
+	players        player.Players
+	waitGroup      sync.WaitGroup
+	wordsInRound   model.Words
+	wordToGuess    string
+	gameInProgress bool
 }
 
 func NewGame(wordsByType map[string]model.Words,
@@ -37,15 +37,15 @@ func NewGame(wordsByType map[string]model.Words,
 		TargetScore:         targetScore,
 		OptionsPerQuestion:  optionsPerQuestion,
 		DurationPerQuestion: durationPerQuestion,
-		RegisterChan:        make(chan *player.Player),
-		UnregisterChan:      make(chan *player.Player),
-		MessageChan:         make(chan player.PlayerMessage),
-		StartChan:           make(chan struct{}),
-		players:             make([]*player.Player, 0, 10),
-		waitGroup:           sync.WaitGroup{},
-		wordsInRound:        nil,
-		wordToGuess:         "",
-		gameInProgress:      false,
+		//RegisterChan:        make(chan *player.Player),
+		UnregisterChan: make(chan *player.Player),
+		MessageChan:    make(chan player.PlayerMessage),
+		StartChan:      make(chan struct{}),
+		players:        make([]*player.Player, 0, 10),
+		waitGroup:      sync.WaitGroup{},
+		wordsInRound:   nil,
+		wordToGuess:    "",
+		gameInProgress: false,
 	}
 }
 
@@ -53,16 +53,18 @@ func NewGame(wordsByType map[string]model.Words,
 func (game *Game) Run() {
 	for {
 		select {
-		case p := <-game.RegisterChan:
-			if game.gameInProgress {
-				// todo message/call to player to try again later
-			}
-			game.players = append(game.players, p)
-			game.requestPlayerName(p)
+		//case p := <-game.RegisterChan:
+		//	if game.gameInProgress {
+		//		// todo message/call to player to try again later
+		//	}
+		//	game.players = append(game.players, p)
+		//game.requestPlayerName(p)
 		case p := <-game.UnregisterChan:
-			p.Active = false
 			close(p.SendToClientChan)
-			game.waitGroup.Done()
+			if p.Active {
+				game.waitGroup.Done()
+			}
+			p.Active = false
 		case <-game.StartChan:
 			go game.PlayGame()
 		case playerMessage := <-game.MessageChan:
@@ -70,8 +72,10 @@ func (game *Game) Run() {
 			case playerMessage.Message.PlayerDetailsResp != nil:
 				p := playerMessage.Player
 				p.SetName(playerMessage.Message.PlayerDetailsResp.Name)
+				p.Icon = playerMessage.Message.PlayerDetailsResp.Icon
 				p.Active = true
-				game.sendIntroToPlayer(p)
+				game.players = append(game.players, p)
+				game.sendWelcomeToPlayer(p)
 			case playerMessage.Message.PlayerResponse != nil:
 				game.handlePlayerResponse(playerMessage.Player, playerMessage.Message.PlayerResponse.Response)
 			}
@@ -86,10 +90,10 @@ func (game *Game) requestPlayerName(p *player.Player) {
 	p.SendToClientChan <- message
 }
 
-func (game *Game) sendIntroToPlayer(p *player.Player) {
+func (game *Game) sendWelcomeToPlayer(p *player.Player) {
 	// Sending messages to the player must be done via channel
 	p.SendToClientChan <- model.MessageToPlayer{
-		Intro: &model.Intro{TargetScore: game.TargetScore},
+		Welcome: &model.Welcome{TargetScore: game.TargetScore},
 	}
 }
 
@@ -120,7 +124,11 @@ func (game *Game) playRound() {
 func (game *Game) sendSummaryToPlayers() {
 	sendSummary := func(p *player.Player) {
 		p.SendToClientChan <- model.MessageToPlayer{
-			Summary: &model.Summary{TotalPoints: p.GetPoints()},
+			Summary: &model.Summary{
+				Winner:      p.GetName(),
+				Icon:        p.Icon,
+				TotalPoints: p.GetPoints(),
+			},
 		}
 	}
 

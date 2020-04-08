@@ -30,6 +30,8 @@ type Player struct {
 	SendToClientChan chan model.MessageToPlayer
 	// Name of this player
 	name string
+	// Client-specific icon to represent the player
+	Icon string
 	// Points for this player
 	points int
 	// Time tracks when a player started to answer a question
@@ -160,8 +162,9 @@ func (p *Player) receiveJSON() (model.MessageFromPlayer, error) {
 
 func (p *Player) PlayerState() model.PlayerState {
 	return model.PlayerState{
-		Name:   p.GetName(),
+		Name:   p.name,
 		Score:  p.GetPoints(),
 		Active: p.Active,
+		Icon:   p.Icon,
 	}
 }

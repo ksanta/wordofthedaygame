@@ -66,8 +66,8 @@ func startReadLoop(conn *websocket.Conn) chan struct{} {
 			if msg.PlayerDetailsReq != nil {
 				handlePlayerDetailsReqMessage(conn)
 
-			} else if msg.Intro != nil {
-				handleIntroMessage(msg.Intro)
+			} else if msg.Welcome != nil {
+				handleIntroMessage(msg.Welcome)
 
 			} else if msg.PresentQuestion != nil {
 				// Run in separate goroutine, so we can listen for timeout msg too
@@ -148,7 +148,7 @@ func handlePlayerDetailsReqMessage(conn *websocket.Conn) {
 	}
 }
 
-func handleIntroMessage(intro *model.Intro) {
+func handleIntroMessage(intro *model.Welcome) {
 	fmt.Println("Playing for", intro.TargetScore, "points.")
 	fmt.Println("Waiting for other players.")
 }
