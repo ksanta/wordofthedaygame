@@ -2,6 +2,16 @@ package player
 
 type Players []*Player
 
+// AllInactive will return true if all the players are inactive
+func (players Players) AllInactive() bool {
+	for _, p := range players {
+		if p.Active {
+			return false
+		}
+	}
+	return true
+}
+
 func (players Players) NumActivePlayers() int {
 	activePlayers := 0
 

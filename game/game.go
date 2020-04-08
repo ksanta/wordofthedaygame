@@ -102,6 +102,11 @@ func (game *Game) safelyUnregisterPlayer(p *player.Player) {
 		game.waitGroup.Done()
 	}
 	p.Active = false
+
+	// Reset the game if all players have become inactive
+	if game.players.AllInactive() {
+		game.reset()
+	}
 }
 
 func (game *Game) requestPlayerName(p *player.Player) {
@@ -133,7 +138,8 @@ func (game *Game) AlertPlayersGameWillBegin() {
 	time.Sleep(time.Duration(waitSeconds) * time.Second)
 }
 
-// PlayGame orchestrates the rounds of questions and displays the result to all players
+// PlayGame orchestrates the rounds of questions and displays the result to all players.
+// This runs in a goroutine.
 func (game *Game) PlayGame() {
 	log.Println("Starting game")
 
@@ -143,6 +149,11 @@ func (game *Game) PlayGame() {
 	maxScore := 0
 	for maxScore <= game.TargetScore {
 		game.playRound()
+
+		if game.players.AllInactive() {
+			break
+		}
+
 		maxScore = game.players.PlayerWithHighestPoints().GetPoints()
 		time.Sleep(2 * time.Second) // Give the players time to prepare for the next round
 	}
@@ -280,6 +291,13 @@ func (game *Game) calculatePoints(correct bool, elapsedTime time.Duration) int {
 	return correctPoints + timePoints
 }
 
+// reset will drop any currently connected players and reset the game state
 func (game *Game) reset() {
+	dropPlayer := func(p *player.Player) {
+
+	}
+
+	game.players.ForActivePlayers(dropPlayer)
+
 	game.players = make([]*player.Player, 0, 10)
 }
