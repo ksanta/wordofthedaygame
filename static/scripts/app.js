@@ -73,6 +73,7 @@ function gameReset() {
     $('.cell').addClass("empty");
     $('.start').removeClass("empty");
     $('#whoWon').hide();
+    // todo: are these correct (below)?
     horseOneAt = 0;
     horseTwoAt = 0;
     horseThreeAt = 0;
@@ -84,14 +85,26 @@ var snd = new Audio('./bugle.wav');
 
 window.WebSocket = window.WebSocket || window.MozWebSocket;
 
-var connection = new WebSocket('ws://localhost:8080/game');
-
-// connection.onopen = function () {
-//   connection.send('start');
-// };
+var connection = new WebSocket('ws://'+ document.location.host + '/game');
 
 connection.onerror = function (error) {
     console.log(error);
+};
+
+var showCountdown = function () {
+    setTimeout(function() {$('#num').text("3");}, 500);
+    setTimeout(function() {$('#num').text("2");}, 1500);
+    setTimeout(function() {$('#num').text("1");}, 2500);
+    setTimeout(function() {$('#num').text("Go!");}, 3500);
+    setTimeout(function() {$('#countDownBox').hide();}, 4000);
+};
+
+var showQuestion = function (question) {
+    $('#questionWord').text(question.WordToGuess);
+    $('#questionAlt1').text("1: " + question.Definitions[0]);
+    $('#questionAlt2').text("2: " + question.Definitions[1]);
+    $('#questionAlt3').text("3: " + question.Definitions[2]);
+    $('#question-area').show();
 };
 
 // Updates the placement of all the horses
@@ -110,27 +123,14 @@ var updateGame = function (summary) {
         // Display the player's chosen horse
         track.children().children().children().children('img').attr('src', 'images/' + horse + '.png');
 
-        let position = player.Score / 500 * 60;
+        const targetPoints = 500;
+        const maxPosition = 60;
+        let position = Math.floor(player.Score / targetPoints * maxPosition);
+        position = Math.min(position, maxPosition);
+
         track.children().children().children().children('img').addClass('empty');
         track.children().children().children().children('img').eq(position).removeClass('empty');
     }
-};
-
-var startGame = function () {
-    // setTimeout(function() {$('#num').text("3");}, 500);
-    // setTimeout(function() {$('#num').text("2");}, 1500);
-    // setTimeout(function() {$('#num').text("1");}, 2500);
-    // setTimeout(function() {$('#num').text("Go!");}, 3500);
-    // setTimeout(function() {$('#countDownBox').hide();}, 4000);
-    $('#countDownBox').hide();
-};
-
-var showQuestion = function (question) {
-    $('#questionWord').text(question.WordToGuess);
-    $('#questionAlt1').text("1: " + question.Definitions[0]);
-    $('#questionAlt2').text("2: " + question.Definitions[1]);
-    $('#questionAlt3').text("3: " + question.Definitions[2]);
-    $('#question-area').show();
 };
 
 var endGame = function (summary) {
@@ -143,11 +143,9 @@ connection.onmessage = function (wsMessage) {
         let data = JSON.parse(wsMessage.data);
 
         if (data.hasOwnProperty('Welcome')) {
-            // todo: should display "waiting for other players"
-            startGame()
+            // todo: should display "waiting for other players". Can display target score?
 
         } else if (data.hasOwnProperty('AboutToStart')) {
-            // todo: implement
             showCountdown(data.AboutToStart)
 
         } else if (data.hasOwnProperty('PresentQuestion')) {

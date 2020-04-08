@@ -15,15 +15,15 @@ type Game struct {
 	TargetScore         int
 	OptionsPerQuestion  int
 	DurationPerQuestion time.Duration
-	//RegisterChan        chan *player.Player
-	UnregisterChan chan *player.Player
-	MessageChan    chan player.PlayerMessage
-	StartChan      chan struct{}
-	players        player.Players
-	waitGroup      sync.WaitGroup
-	wordsInRound   model.Words
-	wordToGuess    string
-	gameInProgress bool
+	UnregisterChan      chan *player.Player
+	MessageChan         chan player.PlayerMessage
+	StartChan           chan struct{}
+	players             player.Players
+	waitGroup           sync.WaitGroup
+	wordsInRound        model.Words
+	wordToGuess         string
+	gameInProgress      bool
+	waitingForAnswers   bool
 }
 
 func NewGame(wordsByType map[string]model.Words,
@@ -37,15 +37,15 @@ func NewGame(wordsByType map[string]model.Words,
 		TargetScore:         targetScore,
 		OptionsPerQuestion:  optionsPerQuestion,
 		DurationPerQuestion: durationPerQuestion,
-		//RegisterChan:        make(chan *player.Player),
-		UnregisterChan: make(chan *player.Player),
-		MessageChan:    make(chan player.PlayerMessage),
-		StartChan:      make(chan struct{}),
-		players:        make([]*player.Player, 0, 10),
-		waitGroup:      sync.WaitGroup{},
-		wordsInRound:   nil,
-		wordToGuess:    "",
-		gameInProgress: false,
+		UnregisterChan:      make(chan *player.Player),
+		MessageChan:         make(chan player.PlayerMessage),
+		StartChan:           make(chan struct{}),
+		players:             make([]*player.Player, 0, 10),
+		waitGroup:           sync.WaitGroup{},
+		wordsInRound:        nil,
+		wordToGuess:         "",
+		gameInProgress:      false,
+		waitingForAnswers:   false,
 	}
 }
 
@@ -53,32 +53,33 @@ func NewGame(wordsByType map[string]model.Words,
 func (game *Game) Run() {
 	for {
 		select {
-		//case p := <-game.RegisterChan:
-		//	if game.gameInProgress {
-		//		// todo message/call to player to try again later
-		//	}
-		//	game.players = append(game.players, p)
-		//game.requestPlayerName(p)
-		case p := <-game.UnregisterChan:
-			close(p.SendToClientChan)
-			if p.Active {
-				game.waitGroup.Done()
-			}
-			p.Active = false
-		case <-game.StartChan:
-			go game.PlayGame()
 		case playerMessage := <-game.MessageChan:
 			switch {
 			case playerMessage.Message.PlayerDetailsResp != nil:
+				// Player has sent their name - they are ready to play
 				p := playerMessage.Player
 				p.SetName(playerMessage.Message.PlayerDetailsResp.Name)
 				p.Icon = playerMessage.Message.PlayerDetailsResp.Icon
 				p.Active = true
 				game.players = append(game.players, p)
 				game.sendWelcomeToPlayer(p)
+				// Sending round summary now alerts each player when new players join
+				game.sendRoundSummaryToEachPlayer()
+
 			case playerMessage.Message.PlayerResponse != nil:
 				game.handlePlayerResponse(playerMessage.Player, playerMessage.Message.PlayerResponse.Response)
 			}
+
+		case <-game.StartChan:
+			// todo: move dynamic fields to the game and free up the parent for new games
+			go game.PlayGame()
+
+		case p := <-game.UnregisterChan:
+			close(p.SendToClientChan)
+			if game.waitingForAnswers {
+				game.waitGroup.Done()
+			}
+			p.Active = false
 		}
 	}
 }
@@ -99,35 +100,54 @@ func (game *Game) sendWelcomeToPlayer(p *player.Player) {
 
 // PlayGame orchestrates the rounds of questions and displays the result to all players
 func (game *Game) PlayGame() {
+	game.AlertPlayersGameWillBegin()
+
 	maxScore := 0
 	for maxScore <= game.TargetScore {
 		game.playRound()
-		maxScore = game.players.MaxScore()
+		maxScore = game.players.PlayerWithHighestPoints().GetPoints()
 		time.Sleep(2 * time.Second) // Give the players time to prepare for the next round
 	}
 
-	game.sendSummaryToPlayers()
+	game.sendGameSummaryToPlayers()
 
 	// todo: remove all players at the end of the game?
 	// todo: split up static/dynamic game fields?
+}
+
+func (game *Game) AlertPlayersGameWillBegin() {
+	alertPlayers := func(p *player.Player) {
+		p.SendToClientChan <- model.MessageToPlayer{
+			AboutToStart: &model.AboutToStart{
+				Seconds: 5,
+			},
+		}
+	}
+	game.players.ForActivePlayers(alertPlayers)
+
+	time.Sleep(5 * time.Second)
 }
 
 func (game *Game) playRound() {
 	game.sendQuestionToEachPlayer()
 
 	// Wait for all players to send in their responses
+	game.waitingForAnswers = true
 	game.waitGroup.Wait()
+	game.waitingForAnswers = false
 
 	game.sendRoundSummaryToEachPlayer()
 }
 
-func (game *Game) sendSummaryToPlayers() {
+func (game *Game) sendGameSummaryToPlayers() {
+	winner := game.players.PlayerWithHighestPoints()
+
 	sendSummary := func(p *player.Player) {
 		p.SendToClientChan <- model.MessageToPlayer{
 			Summary: &model.Summary{
-				Winner:      p.GetName(),
-				Icon:        p.Icon,
-				TotalPoints: p.GetPoints(),
+				Winner:      winner.GetName(),
+				Icon:        winner.Icon,
+				TotalPoints: winner.GetPoints(),
 			},
 		}
 	}

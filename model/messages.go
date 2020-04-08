@@ -4,6 +4,7 @@ package model
 type MessageToPlayer struct {
 	PlayerDetailsReq *PlayerDetailsReq `json:",omitempty"`
 	Welcome          *Welcome          `json:",omitempty"`
+	AboutToStart     *AboutToStart     `json:",omitempty"`
 	PresentQuestion  *PresentQuestion  `json:",omitempty"`
 	PlayerResult     *PlayerResult     `json:",omitempty"`
 	RoundSummary     *RoundSummary     `json:",omitempty"`
@@ -28,6 +29,11 @@ type PlayerDetails struct {
 // Welcome tells the client to display an intro to the player
 type Welcome struct {
 	TargetScore int
+}
+
+// AboutToStart tells all players that the game will start in X seconds
+type AboutToStart struct {
+	Seconds int
 }
 
 // PresentQuestion is sent to the client telling it to pose a question to the player
