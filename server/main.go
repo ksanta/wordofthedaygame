@@ -59,20 +59,19 @@ func handleNewPlayer(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	p := player.NewPlayer(conn, theGame.UnregisterChan, theGame.MessageChan)
+	// This channel will block this goroutine from exiting. If it closes, the connection will close
+	disconnectChan := make(chan struct{})
+
+	p := player.NewPlayer(conn, disconnectChan, theGame.MessageChan)
 
 	go p.ReadPump()
 	go p.WritePump()
 
-	//theGame.RegisterChan <- p
-
-	// Lock indefinitely as a test
-	channel := make(chan bool)
-	<-channel
+	<-disconnectChan
+	conn.Close()
 }
 
 func handleStartGame(w http.ResponseWriter, e *http.Request) {
-	log.Println("Starting game")
 	theGame.StartChan <- struct{}{}
 	_, err := fmt.Fprint(w, "Game started")
 	if err != nil {

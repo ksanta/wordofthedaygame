@@ -22,8 +22,8 @@ type Player struct {
 	// Whether the player has an active connection. Connection could go dead mid-game
 	// and the show must go on!
 	Active bool
-	// Posting here will unregister this player
-	unregisterChan chan *Player
+	// Posting here will terminate the TCP connection
+	disconnectChan chan struct{}
 	// Posting here will send the message to the game hub
 	sendToGameChan chan PlayerMessage
 	// SendToClientChan will send received messages to the Websocket connection
@@ -45,11 +45,11 @@ type PlayerMessage struct {
 	Message model.MessageFromPlayer
 }
 
-func NewPlayer(conn *websocket.Conn, unregisterChan chan *Player, sendToGameChan chan PlayerMessage) *Player {
+func NewPlayer(conn *websocket.Conn, disconnectChan chan struct{}, sendToGameChan chan PlayerMessage) *Player {
 	return &Player{
 		Logger:           log.New(os.Stdout, "[New player] ", 0),
 		conn:             conn,
-		unregisterChan:   unregisterChan,
+		disconnectChan:   disconnectChan,
 		sendToGameChan:   sendToGameChan,
 		SendToClientChan: make(chan model.MessageToPlayer),
 		name:             "New player",
@@ -61,7 +61,7 @@ func NewPlayer(conn *websocket.Conn, unregisterChan chan *Player, sendToGameChan
 func (p *Player) WritePump() {
 	defer func() {
 		p.Println("Closing TCP connection")
-		p.conn.Close()
+		p.disconnectChan <- struct{}{}
 	}()
 
 	for {
@@ -84,8 +84,14 @@ func (p *Player) WritePump() {
 // This is to be started as a goroutine.
 func (p *Player) ReadPump() {
 	defer func() {
+		// Notify the game that the player disconnected. That will handle shutdown.
 		p.Println("Unregistering", p.name)
-		p.unregisterChan <- p
+		p.sendToGameChan <- PlayerMessage{
+			Player: p,
+			Message: model.MessageFromPlayer{
+				Disconnected: &model.Disconnected{},
+			},
+		}
 	}()
 
 	for {

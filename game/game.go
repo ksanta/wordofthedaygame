@@ -3,6 +3,7 @@ package game
 import (
 	"github.com/ksanta/wordofthedaygame/model"
 	"github.com/ksanta/wordofthedaygame/player"
+	"log"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -15,7 +16,6 @@ type Game struct {
 	TargetScore         int
 	OptionsPerQuestion  int
 	DurationPerQuestion time.Duration
-	UnregisterChan      chan *player.Player
 	MessageChan         chan player.PlayerMessage
 	StartChan           chan struct{}
 	players             player.Players
@@ -37,7 +37,6 @@ func NewGame(wordsByType map[string]model.Words,
 		TargetScore:         targetScore,
 		OptionsPerQuestion:  optionsPerQuestion,
 		DurationPerQuestion: durationPerQuestion,
-		UnregisterChan:      make(chan *player.Player),
 		MessageChan:         make(chan player.PlayerMessage),
 		StartChan:           make(chan struct{}),
 		players:             make([]*player.Player, 0, 10),
@@ -56,32 +55,53 @@ func (game *Game) Run() {
 		case playerMessage := <-game.MessageChan:
 			switch {
 			case playerMessage.Message.PlayerDetailsResp != nil:
-				// Player has sent their name - they are ready to play
-				p := playerMessage.Player
-				p.SetName(playerMessage.Message.PlayerDetailsResp.Name)
-				p.Icon = playerMessage.Message.PlayerDetailsResp.Icon
-				p.Active = true
-				game.players = append(game.players, p)
-				game.sendWelcomeToPlayer(p)
-				// Sending round summary now alerts each player when new players join
-				game.sendRoundSummaryToEachPlayer()
+				game.handlePlayerReady(playerMessage)
 
 			case playerMessage.Message.PlayerResponse != nil:
 				game.handlePlayerResponse(playerMessage.Player, playerMessage.Message.PlayerResponse.Response)
+
+			case playerMessage.Message.Disconnected != nil:
+				// Player sent the game a Disconnect msg because the connection was lost
+				game.safelyUnregisterPlayer(playerMessage.Player)
 			}
 
 		case <-game.StartChan:
-			// todo: move dynamic fields to the game and free up the parent for new games
-			go game.PlayGame()
-
-		case p := <-game.UnregisterChan:
-			close(p.SendToClientChan)
-			if game.waitingForAnswers {
-				game.waitGroup.Done()
+			if game.players.NumActivePlayers() > 0 {
+				go game.PlayGame()
 			}
-			p.Active = false
 		}
 	}
+}
+
+func (game *Game) handlePlayerReady(playerMessage player.PlayerMessage) {
+	// Prevent player from registering if there is a game in progress
+	if game.gameInProgress {
+		messageToPlayer := model.MessageToPlayer{
+			Error: &model.GameError{
+				Message: "Game is already in progress",
+			},
+		}
+		playerMessage.Player.SendToClientChan <- messageToPlayer
+		return
+	}
+
+	// Player has sent their name - they are ready to play
+	p := playerMessage.Player
+	p.SetName(playerMessage.Message.PlayerDetailsResp.Name)
+	p.Icon = playerMessage.Message.PlayerDetailsResp.Icon
+	p.Active = true
+	game.players = append(game.players, p)
+	game.sendWelcomeToPlayer(p)
+	// Sending round summary now alerts each player when new players join
+	game.sendRoundSummaryToEachPlayer()
+}
+
+func (game *Game) safelyUnregisterPlayer(p *player.Player) {
+	close(p.SendToClientChan)
+	if game.waitingForAnswers {
+		game.waitGroup.Done()
+	}
+	p.Active = false
 }
 
 func (game *Game) requestPlayerName(p *player.Player) {
@@ -98,8 +118,26 @@ func (game *Game) sendWelcomeToPlayer(p *player.Player) {
 	}
 }
 
+func (game *Game) AlertPlayersGameWillBegin() {
+	const waitSeconds = 5
+
+	alertPlayers := func(p *player.Player) {
+		p.SendToClientChan <- model.MessageToPlayer{
+			AboutToStart: &model.AboutToStart{
+				Seconds: waitSeconds,
+			},
+		}
+	}
+	game.players.ForActivePlayers(alertPlayers)
+
+	time.Sleep(time.Duration(waitSeconds) * time.Second)
+}
+
 // PlayGame orchestrates the rounds of questions and displays the result to all players
 func (game *Game) PlayGame() {
+	log.Println("Starting game")
+
+	game.gameInProgress = true
 	game.AlertPlayersGameWillBegin()
 
 	maxScore := 0
@@ -110,22 +148,8 @@ func (game *Game) PlayGame() {
 	}
 
 	game.sendGameSummaryToPlayers()
-
-	// todo: remove all players at the end of the game?
-	// todo: split up static/dynamic game fields?
-}
-
-func (game *Game) AlertPlayersGameWillBegin() {
-	alertPlayers := func(p *player.Player) {
-		p.SendToClientChan <- model.MessageToPlayer{
-			AboutToStart: &model.AboutToStart{
-				Seconds: 5,
-			},
-		}
-	}
-	game.players.ForActivePlayers(alertPlayers)
-
-	time.Sleep(5 * time.Second)
+	game.gameInProgress = false
+	game.reset()
 }
 
 func (game *Game) playRound() {
@@ -254,4 +278,8 @@ func (game *Game) calculatePoints(correct bool, elapsedTime time.Duration) int {
 	}
 
 	return correctPoints + timePoints
+}
+
+func (game *Game) reset() {
+	game.players = make([]*player.Player, 0, 10)
 }

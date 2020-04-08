@@ -9,12 +9,17 @@ type MessageToPlayer struct {
 	PlayerResult     *PlayerResult     `json:",omitempty"`
 	RoundSummary     *RoundSummary     `json:",omitempty"`
 	Summary          *Summary          `json:",omitempty"`
+	Error            *GameError        `json:",omitempty"`
 }
+
+// Disconnected is sent from the Player type to the Game when the websocket connection is lost
+type Disconnected struct{}
 
 // MessageFromPlayer is received from the network from the client
 type MessageFromPlayer struct {
 	PlayerDetailsResp *PlayerDetails  `json:",omitempty"`
 	PlayerResponse    *PlayerResponse `json:",omitempty"`
+	Disconnected      *Disconnected   `json:",omitempty"`
 }
 
 // PlayerDetailsReq is sent to the client telling it to get the player's details
@@ -70,4 +75,8 @@ type Summary struct {
 	Winner      string
 	Icon        string
 	TotalPoints int
+}
+
+type GameError struct {
+	Message string
 }
