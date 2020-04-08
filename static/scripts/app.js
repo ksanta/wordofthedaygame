@@ -3,11 +3,7 @@ $(document).on("ready", function () {
     $('#countDownBox').hide();
 
     $('.reset').on('click', function (e) {
-        gameReset();
-        horseOneAt = 0;
-        horseTwoAt = 0;
-        horseThreeAt = 0;
-        horseFourAt = 0;
+        window.location.reload(true);
     });
 
     $('img.horse-option').click(function () {
@@ -22,10 +18,11 @@ $(document).on("ready", function () {
 
 // Initializes game with players' chosen preferences
     $('.submit').on('click', function (e) {
-        snd.play();
-        snd.currentTime = 0;
+        if (!document.getElementById("nameEntryOne").value || $('.horse-selected')[0].id == undefined){
+          return
+        }
+
         $('#selections').hide();
-        $('#countDownBox').show();
 
         let player = {
             PlayerDetailsResp: {
@@ -36,7 +33,7 @@ $(document).on("ready", function () {
         connection.send(JSON.stringify(player))
     });
 
-    $('#submit-answer').on('click', function (e) {
+    $('.alternative').on('click', function (e) {
         let selected = $('.alt-selected').attr('id');
         let response = 0;
 
@@ -65,23 +62,20 @@ $(document).on("ready", function () {
 //Helper Functions
 function displayWinner(win, pic) {
     $('#whoWon').show();
+    victory.play();
+    victory.currentTime = 0;
+        
     $('#winnerName').text(win);
     $('#winPic').html("<img src=" + pic + ">");
 }
 
 function gameReset() {
-    $('.cell').addClass("empty");
-    $('.start').removeClass("empty");
-    $('#whoWon').hide();
-    // todo: are these correct (below)?
-    horseOneAt = 0;
-    horseTwoAt = 0;
-    horseThreeAt = 0;
-    horseFourAt = 0;
+  window.location.reload(true);
 }
 
 //Variables to initialize
 var snd = new Audio('./bugle.wav');
+var victory = new Audio('./victory.mp3');
 
 window.WebSocket = window.WebSocket || window.MozWebSocket;
 
@@ -92,6 +86,10 @@ connection.onerror = function (error) {
 };
 
 var showCountdown = function () {
+    $('#countDownBox').show();
+    snd.play();
+    snd.currentTime = 0;
+        
     setTimeout(function() {$('#num').text("3");}, 500);
     setTimeout(function() {$('#num').text("2");}, 1500);
     setTimeout(function() {$('#num').text("1");}, 2500);
@@ -137,6 +135,11 @@ var endGame = function (summary) {
     displayWinner(summary.Winner, "images/" + summary.Icon + ".png")
 };
 
+var showError = function(message) {
+    $('#errorBox').show()
+    $('#errorMessage').text(message.Message)
+}
+
 connection.onmessage = function (wsMessage) {
     try {
         console.log("Received: " + wsMessage.data);
@@ -144,6 +147,9 @@ connection.onmessage = function (wsMessage) {
 
         if (data.hasOwnProperty('Welcome')) {
             // todo: should display "waiting for other players". Can display target score?
+
+        } else if (data.hasOwnProperty('Error')) {
+            showError(data.Error)
 
         } else if (data.hasOwnProperty('AboutToStart')) {
             showCountdown(data.AboutToStart)

@@ -52,12 +52,16 @@
         <div id="circle"><h1 id="num"></h1>
       </div>
       <br />
-      <!-- <button type="button" class="btn btn-success countdown">Start Countdown</button>
-      <br /> -->
+    </div>
+
+    <div id="errorBox" style="display:none;">
+      <br />
+      <h2 id="errorMessage"></h2>
+      <br />
     </div>
 
     <div id = "container">
-      <div><p id="player0Name" style="position: absolute; top: 8%; left: 0.5%;"></p></div>
+      <div><p id="player0Name" style="position: absolute; top: 8%; left: 0.5%;font: bold 15px'Open Sans', sans-serif;color: white;"></p></div>
       <table class = "track track0">
         <tr class = "track0">
           <td><img src="" class ="start"></td>
@@ -531,24 +535,30 @@
           <td><textarea class="alternative altA" id="questionAlt1" readonly style="border: none"></textarea></td>
         </tr>
         <tr>
+          <td style="background-color: lightblue; height: 20px;"></td>
+        </tr>
+        <tr>
           <td><textarea class="alternative altB" id="questionAlt2"readonly style="border: none"></textarea ></td>
+        </tr>
+        <tr>
+          <td style="background-color: lightblue; height: 20px;"></td>
         </tr>
         <tr>
           <td><textarea class="alternative altC" id="questionAlt3"readonly style="border: none"></textarea ></td>
         </tr>
-        <tr>
-          <td style="background-color: lightblue; height: 50px;"></td>
-        </tr>
 
       </table>
-      <button id="submit-answer" class="button" >Submit!</div>
       </div>
       <div id = "whoWon">
-        <button type="button" class="btn btn-success reset">Play Again!</button>
-        <h1>To the Winners Circle!</h1></br>
-        <h1 id=winnerName></h1>
-        <div id="winPic"></div>
-        <h1>Congratulations!</h1>
+        <div class="pyro">
+          <div class="before"></div>
+          <h1>To the Winners Circle!</h1></br>
+          <h1 id=winnerName></h1>
+          <div id="winPic"></div>
+          <h1>Congratulations!</h1>
+          <button type="button" class="btn btn-success reset">Play Again!</button>
+          <div class="after"></div>
+        </div>
       </div>
     </div>
   </body>
