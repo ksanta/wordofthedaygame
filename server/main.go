@@ -21,7 +21,7 @@ var (
 	cacheLimit         = flag.Int("cacheLimit", 3000, "The max number of words to cache")
 	targetScore        = flag.Int("targetScore", 500, "Player wins when target score is reached")
 	optionsPerQuestion = flag.Int("optionsPerQuestion", 3, "Number of options per question")
-	addr               = flag.String("addr", "localhost:8080", "http service address")
+	addr               = flag.String("addr", ":8080", "http service address")
 )
 
 var theGame *game.Game
