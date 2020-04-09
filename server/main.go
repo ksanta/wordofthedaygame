@@ -26,7 +26,14 @@ var (
 
 var theGame *game.Game
 
-var upgrader websocket.Upgrader
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		// Accept requests from any Origin
+		origin := r.Header.Get("Origin")
+		log.Println("Connection referred from origin", origin)
+		return true
+	},
+}
 
 func main() {
 	flag.Parse()

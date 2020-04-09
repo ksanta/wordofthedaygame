@@ -303,6 +303,6 @@ func (game *Game) calculatePoints(correct bool, elapsedTime time.Duration) int {
 
 // reset will reset the game state
 func (game *Game) reset() {
-	log.Println("Game reset")
+	log.Println("Removing all players")
 	game.players = make([]*player.Player, 0, 10)
 }
