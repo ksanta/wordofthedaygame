@@ -134,8 +134,12 @@ var updateGame = function (summary) {
         $('#player' + i + 'Name').text(name);
 
         // Display the player's chosen horse
-        track.children().children().children().children('img').attr('src', 'images/' + horse + '.png');
-
+        if (active) {
+            track.children().children().children().children('img').attr('src', 'images/' + horse + '.png');
+        } else {
+            track.children().children().children().children('img').attr('src', 'images/dead.png');
+        }
+        
         const targetPoints = 500;
         const maxPosition = 60;
         let position = Math.floor(player.Score / targetPoints * maxPosition);
@@ -158,7 +162,7 @@ var showError = function(message) {
 
 var showResult = function(correct) {
     if (correct){
-        $('.alt-selected').css('background-color', 'green')
+        $('.alt-selected').css('background-color',   'green')
     } else {
         $('.alt-selected').css('background-color', 'red')
     }
