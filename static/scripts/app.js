@@ -31,7 +31,16 @@ $(document).on("ready", function () {
             }
         };
         connection.send(JSON.stringify(player))
+        $('#startGameBox').show()
     });
+
+    $('#start-game-btn').on('click', function(e){
+        $.get( "/start", function() {
+          console.log( "game started" );
+        })
+        $('#startGameBox').hide()
+    });
+
 
     $('.alternative').on('click', function (e) {
         let selected = $('.alt-selected').attr('id');
@@ -52,7 +61,7 @@ $(document).on("ready", function () {
         };
         connection.send(JSON.stringify(message));
         // todo: instead of hiding, server will give feedback of right/wrong -> change colour
-        $('#question-area').hide()
+        // $('#question-area').hide()
     });
 
 });
@@ -98,6 +107,9 @@ var showCountdown = function () {
 };
 
 var showQuestion = function (question) {
+    $('#question-area').show()
+    $('.alternative').css('background-color', 'white');
+
     $('#questionWord').text(question.WordToGuess);
     $('#questionAlt1').text("1: " + question.Definitions[0]);
     $('#questionAlt2').text("2: " + question.Definitions[1]);
@@ -132,12 +144,21 @@ var updateGame = function (summary) {
 };
 
 var endGame = function (summary) {
+    $('#question-area').hide()
     displayWinner(summary.Winner, "images/" + summary.Icon + ".png")
 };
 
 var showError = function(message) {
     $('#errorBox').show()
     $('#errorMessage').text(message.Message)
+}
+
+var showResult = function(correct) {
+    if (correct){
+        $('.alt-selected').css('background-color', 'green')
+    } else {
+        $('.alt-selected').css('background-color', 'red')
+    }
 }
 
 connection.onmessage = function (wsMessage) {
@@ -162,6 +183,9 @@ connection.onmessage = function (wsMessage) {
 
         } else if (data.hasOwnProperty('Summary')) {
             endGame(data.Summary)
+
+        } else if (data.hasOwnProperty('PlayerResult')) {
+            showResult(data.PlayerResult.Correct)
         }
 
     } catch (e) {
