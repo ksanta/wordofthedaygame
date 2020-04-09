@@ -286,14 +286,17 @@ func (game *Game) validateResponse(response string) bool {
 }
 
 func (game *Game) calculatePoints(correct bool, elapsedTime time.Duration) int {
-	correctPoints := 0
+	// Player took longer than allowed time - no points!
+	if elapsedTime > game.DurationPerQuestion {
+		return 0
+	}
 
+	correctPoints := 0
 	if correct {
 		correctPoints += 100
 	}
 
-	timePoints := int(100 * (game.DurationPerQuestion - elapsedTime) / game.DurationPerQuestion)
-
+	timePoints := int(50 * (game.DurationPerQuestion - elapsedTime) / game.DurationPerQuestion)
 	if timePoints < 0 {
 		timePoints = 0
 	}
