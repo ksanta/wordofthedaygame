@@ -35,7 +35,7 @@ $(document).on("ready", function () {
     });
 
     $('#start-game-btn').on('click', function(e){
-        $.get("http://ec2-52-63-119-7.ap-southeast-2.compute.amazonaws.com/start", function() {
+        $.get("http://ec2-52-63-119-7.ap-southeast-2.compute.amazonaws.com:8080/start", function() {
           console.log( "game started" );
         });
         $('#startGameBox').hide()
