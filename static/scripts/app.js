@@ -95,6 +95,7 @@ connection.onerror = function (error) {
 };
 
 var showCountdown = function () {
+    $('#startGameBox').hide()
     $('#countDownBox').show();
     snd.play();
     snd.currentTime = 0;
