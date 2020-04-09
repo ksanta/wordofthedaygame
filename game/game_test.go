@@ -14,62 +14,71 @@ var words = model.Words{
 
 func TestGame_CalculatePoints(t *testing.T) {
 	g := Game{
-		Words:               nil,
-		TargetScore:         5,
+		WordsByType:         nil,
+		TargetScore:         500,
 		OptionsPerQuestion:  3,
 		DurationPerQuestion: 10 * time.Second,
 	}
 
 	gotPoints := g.calculatePoints(true, 2*time.Second)
-	expectedPoints := 100 + 80
+	expectedPoints := 100 + 40
 	if gotPoints != expectedPoints {
 		t.Errorf("Got %d points but expected %d", gotPoints, expectedPoints)
 	}
 
 	gotPoints = g.calculatePoints(false, 8*time.Second)
-	expectedPoints = 0 + 20
+	expectedPoints = 0 + 10
 	if gotPoints != expectedPoints {
 		t.Errorf("Got %d points but expected %d", gotPoints, expectedPoints)
 	}
 }
 
 func TestGame_ValidateResponse(t *testing.T) {
+	g := Game{
+		WordsByType:         nil,
+		TargetScore:         500,
+		OptionsPerQuestion:  3,
+		DurationPerQuestion: 10 * time.Second,
+		wordsInRound:        words,
+	}
+
 	// Validate responses
-	if !validateResponse("1", words, "hello") {
+	g.wordToGuess = "greetings"
+	if g.validateResponse("1") {
 		t.Error("Happy case 1 fail")
 	}
 
-	if !validateResponse("2", words, "greetings") {
+	if !g.validateResponse("2") {
 		t.Error("Happy case 2 fail")
 	}
 
-	if !validateResponse("02", words, "greetings") {
+	if !g.validateResponse("02") {
 		t.Error("Happy case 02 fail")
 	}
 
-	if !validateResponse(" 2", words, "greetings") {
+	if !g.validateResponse(" 2") {
 		t.Error("Happy case ' 2' fail")
 	}
 
-	if !validateResponse("2 ", words, "greetings") {
+	if !g.validateResponse("2 ") {
 		t.Error("Happy case '2 ' fail")
 	}
 
 	// Invalid responses
-	if validateResponse("0", words, "hello") {
+	g.wordToGuess = "hello"
+	if g.validateResponse("0") {
 		t.Error("Zero response fail")
 	}
 
-	if validateResponse("-1", words, "hello") {
+	if g.validateResponse("-1") {
 		t.Error("Negative response fail")
 	}
 
-	if validateResponse("", words, "hello") {
+	if g.validateResponse("") {
 		t.Error("Blank response fail")
 	}
 
-	if validateResponse("A", words, "hello") {
+	if g.validateResponse("A") {
 		t.Error("Alpha response fail")
 	}
-
 }
