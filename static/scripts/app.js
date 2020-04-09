@@ -35,7 +35,7 @@ $(document).on("ready", function () {
     });
 
     $('#start-game-btn').on('click', function(e){
-        $.get( "/start", function() {
+        $.get("http://" + API_IP + "/start", function() {
           console.log( "game started" );
         })
         $('#startGameBox').hide()
@@ -83,12 +83,14 @@ function gameReset() {
 }
 
 //Variables to initialize
+const API_IP = "52.63.119.7:8080";
+
 var snd = new Audio('./bugle.wav');
 var victory = new Audio('./victory.mp3');
 
 window.WebSocket = window.WebSocket || window.MozWebSocket;
 
-var connection = new WebSocket('ws://'+ document.location.host + '/game');
+var connection = new WebSocket('ws://'+ API_IP + '/game');
 
 connection.onerror = function (error) {
     console.log(error);
