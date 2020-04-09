@@ -267,6 +267,7 @@ func (game *Game) handlePlayerResponse(p *player.Player, response string) {
 	game.waitGroup.Done()
 }
 
+// validateResponse returns true if the response is correct
 func (game *Game) validateResponse(response string) bool {
 	// If the response doesn't convert to an integer, it's wrong
 	responseNum, err := strconv.Atoi(strings.TrimSpace(response))

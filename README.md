@@ -12,10 +12,15 @@ The simplest way to play the game is to use Docker. This way, you don't even nee
 ```shell script
 docker build -t ksanta/wordofthedaygame .
 
-# This step starts and runs the game. It can take a few minutes as it scrapes words of the day from the web.
+# This step starts and runs the server. It can take a few minutes as it scrapes words of the day from the web.
 docker run --name wordofthedaygame -p 8080:8080 ksanta/wordofthedaygame
+```
 
-# Once the container is created with all the words pre-cached, run this to play the game
+Once the server is running and you see it output `Listening on :8080`, open a browser on `localhost:8080`
+to start playing.
+
+If the server has stopped, run this to start it up again.
+```shell script
 docker start -i wordofthedaygame
 ```
 

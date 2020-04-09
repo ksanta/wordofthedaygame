@@ -14,7 +14,7 @@ var sampleWords = Words{
 
 func TestWords_PickRandomType(t *testing.T) {
 	rand.Seed(1)
-	got := sampleWords.PickRandomType()
+	got := PickRandomType()
 	expected := "adjective"
 	if got != expected {
 		t.Errorf("Got %s and expected %s", got, expected)
