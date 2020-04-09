@@ -62,6 +62,7 @@ $(document).on("ready", function () {
         connection.send(JSON.stringify(message));
         // todo: instead of hiding, server will give feedback of right/wrong -> change colour
         // $('#question-area').hide()
+        $('.alternative').css("pointer-events","none")
     });
 
 });
@@ -111,6 +112,7 @@ var showCountdown = function () {
 
 var showQuestion = function (question) {
     $('#question-area').show()
+    $('.alternative').css("pointer-events","auto")
     $('.alternative').css('background-color', 'white');
 
     $('#questionWord').text(question.WordToGuess);
