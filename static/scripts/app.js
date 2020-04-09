@@ -35,7 +35,7 @@ $(document).on("ready", function () {
     });
 
     $('#start-game-btn').on('click', function(e){
-        $.get("/start", function() {
+        $.get("http://" + API_IP + "/start", function() {
           console.log( "game started" );
         })
         $('#startGameBox').hide()
