@@ -16,6 +16,7 @@ type Game struct {
 	TargetScore         int
 	OptionsPerQuestion  int
 	DurationPerQuestion time.Duration
+	MaxPlayerCount      int
 	MessageChan         chan player.PlayerMessage
 	StartChan           chan struct{}
 	players             player.Players
@@ -29,7 +30,8 @@ type Game struct {
 func NewGame(wordsByType map[string]model.Words,
 	targetScore int,
 	optionsPerQuestion int,
-	durationPerQuestion time.Duration) *Game {
+	durationPerQuestion time.Duration,
+	maxPlayerCount int) *Game {
 	rand.Seed(time.Now().Unix())
 
 	return &Game{
@@ -37,14 +39,16 @@ func NewGame(wordsByType map[string]model.Words,
 		TargetScore:         targetScore,
 		OptionsPerQuestion:  optionsPerQuestion,
 		DurationPerQuestion: durationPerQuestion,
+		MaxPlayerCount:      maxPlayerCount,
 		MessageChan:         make(chan player.PlayerMessage),
-		StartChan:           make(chan struct{}),
-		players:             make([]*player.Player, 0, 10),
-		waitGroup:           sync.WaitGroup{},
-		wordsInRound:        nil,
-		wordToGuess:         "",
-		gameInProgress:      false,
-		waitingForAnswers:   false,
+		// Buffer on StartChan required because same thread can send/receive
+		StartChan:         make(chan struct{}, 1),
+		players:           make([]*player.Player, 0, 10),
+		waitGroup:         sync.WaitGroup{},
+		wordsInRound:      nil,
+		wordToGuess:       "",
+		gameInProgress:    false,
+		waitingForAnswers: false,
 	}
 }
 
@@ -92,8 +96,14 @@ func (game *Game) handlePlayerReady(playerMessage player.PlayerMessage) {
 	p.Active = true
 	game.players = append(game.players, p)
 	game.sendWelcomeToPlayer(p)
+
 	// Sending round summary now alerts each player when new players join
 	game.sendRoundSummaryToEachPlayer()
+
+	// Auto-start the game if there are N players ready
+	if game.players.NumActivePlayers() == game.MaxPlayerCount {
+		game.StartChan <- struct{}{}
+	}
 }
 
 func (game *Game) safelyUnregisterPlayer(p *player.Player) {
@@ -291,13 +301,8 @@ func (game *Game) calculatePoints(correct bool, elapsedTime time.Duration) int {
 	return correctPoints + timePoints
 }
 
-// reset will drop any currently connected players and reset the game state
+// reset will reset the game state
 func (game *Game) reset() {
-	dropPlayer := func(p *player.Player) {
-
-	}
-
-	game.players.ForActivePlayers(dropPlayer)
-
+	log.Println("Game reset")
 	game.players = make([]*player.Player, 0, 10)
 }

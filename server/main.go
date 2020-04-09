@@ -46,7 +46,7 @@ func initialiseTheGame() {
 	words := obtainWordsOfTheDay()
 	wordsByType := words.GroupByType()
 
-	theGame = game.NewGame(wordsByType, *targetScore, *optionsPerQuestion, 10*time.Second)
+	theGame = game.NewGame(wordsByType, *targetScore, *optionsPerQuestion, 10*time.Second, 7)
 
 	go theGame.Run()
 }

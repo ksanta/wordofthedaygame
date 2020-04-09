@@ -98,7 +98,7 @@ func (p *Player) ReadPump() {
 		message, err := p.receiveJSON()
 		if err != nil {
 			// Client closed the connection
-			if !websocket.IsCloseError(err, websocket.CloseNormalClosure) {
+			if !websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
 				p.Println("Unexpected close error:", err)
 			}
 			return
