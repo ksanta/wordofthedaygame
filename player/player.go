@@ -22,6 +22,8 @@ type Player struct {
 	// Whether the player has an active connection. Connection could go dead mid-game
 	// and the show must go on!
 	Active bool
+	// WaitingFOrResponse means the player has been sent the question and hasn't received response yet
+	WaitingForResponse bool
 	// Posting here will terminate the TCP connection
 	disconnectChan chan struct{}
 	// Posting here will send the message to the game hub

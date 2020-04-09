@@ -164,6 +164,7 @@ func (game *Game) PlayGame() {
 			break
 		}
 
+		// todo: still getting occasional nil pointer deference errors
 		maxScore = game.players.PlayerWithHighestPoints().GetPoints()
 		time.Sleep(2 * time.Second) // Give the players time to prepare for the next round
 	}
@@ -222,6 +223,7 @@ func (game *Game) sendQuestionToEachPlayer() {
 	sendQuestion := func(p *player.Player) {
 		p.StartTimer()
 		p.SendToClientChan <- questionMsg
+		p.WaitingForResponse = true
 	}
 
 	game.players.ForActivePlayers(sendQuestion)
@@ -249,6 +251,11 @@ func (game *Game) sendRoundSummaryToEachPlayer() {
 }
 
 func (game *Game) handlePlayerResponse(p *player.Player, response string) {
+	if !p.WaitingForResponse {
+		// Reject multiple responses from the player
+		return
+	}
+
 	elapsedTime := p.StopTimer()
 
 	correct := game.validateResponse(response)
@@ -265,6 +272,8 @@ func (game *Game) handlePlayerResponse(p *player.Player, response string) {
 	}
 
 	game.waitGroup.Done()
+
+	p.WaitingForResponse = false
 }
 
 // validateResponse returns true if the response is correct
