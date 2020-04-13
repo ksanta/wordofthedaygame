@@ -1,570 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Custom fonts -->
     <link href='https://fonts.googleapis.com/css?family=Sancreek' rel='stylesheet' type='text/css'>
     <!-- Bootstrap CDN -->
-    <link type="text/css" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <!-- Custom CSS -->
     <link rel="stylesheet" type="text/css" href="styles/styles.css">
     <!-- jQuery -->
-		<script src="http://code.jquery.com/jquery-2.2.2.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <!-- Custom JS -->
     <script type="text/javascript" src="scripts/app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
     <title>Word Stallion</title>
-  </head>
+</head>
 
-  <body>
-    <div id = "title">
-      <h1>◊ Word Stallion ◊</h1>
-    </div>
+<body>
+<div id="title">
+    <h1>◊ Word Stallion ◊</h1>
+</div>
 
-    <div id="selections">
-      <h1>Welcome to The Word Stallion Game!</h1>
-      <div>
+<div id="selections">
+    <h1>Welcome to The Word Stallion Game!</h1>
+    <div>
         <div id="buttonHolder">
-          <h2> Type your name and choose your horse:</h2>
+            <h2> Type your name and choose your horse:</h2>
         </div>
-      </div>
-      <div id="player1" class ="">
+    </div>
+    <div>
         <h2>Your Name:</h2>
-          <input type="text" class="form-control" maxlength="50" id="nameEntryOne" value="">
+        <input type="text" class="form-control" maxlength="50" id="nameEntryOne" value="">
         <div>
-          <h2>Your Horse:</h2>
-          <img id="Horse1" class="horse-option" src="images/Horse1.png">
-          <img id="Horse2" class="horse-option" src="images/Horse2.png">
-          <img id="Horse3" class="horse-option" src="images/Horse3.png">
-          <img id="Horse4" class="horse-option" src="images/Horse4.png">
-          <img id="Horse5" class="horse-option" src="images/Horse5.png">
-          <img id="Horse6" class="horse-option" src="images/Horse6.png">
-          <img id="Horse7" class="horse-option" src="images/Horse7.png">
+            <h2>Your Horse:</h2>
+            <img id="Horse1" class="horse-option" src="images/Horse1.png">
+            <img id="Horse2" class="horse-option" src="images/Horse2.png">
+            <img id="Horse3" class="horse-option" src="images/Horse3.png">
+            <img id="Horse4" class="horse-option" src="images/Horse4.png">
+            <img id="Horse5" class="horse-option" src="images/Horse5.png">
+            <img id="Horse6" class="horse-option" src="images/Horse6.png">
+            <img id="Horse7" class="horse-option" src="images/Horse7.png">
         </div>
-      </div>
-      <button type="button" class="btn btn-success submit">Let's go!</button>
     </div>
+    <button type="button" class="btn btn-success submit">Let's go!</button>
+</div>
 
-    <div id="countDownBox">
-      <h2>Answer the questions correctly to move your horse. The race is about to start!</h2>
-        <div id="circle"><h1 id="num"></h1>
-      </div>
-      <br />
+<div id="countDownBox">
+    <h2>Answer the questions correctly to move your horse. The race is about to start!</h2>
+    <div id="circle">
+        <h1 id="num"></h1>
     </div>
+    <br/>
+</div>
 
-    <div id="startGameBox" style="display: none;">
-      <h2>Waiting for other players to join...</h2>
-      <p><h2>When ready, you can <button type="button" id="start-game-btn" class="btn btn-success">Start Game</button></h2></p>
-    </div>
-    
-    <div id="errorBox" style="display:none;">
-      <br />
-      <h2 id="errorMessage"></h2>
-      <br />
-    </div>
+<div id="startGameBox" style="display: none;">
+    <h2>Waiting for other players to join...</h2>
+    <p>
+    <h2>When ready, you can
+        <button type="button" id="start-game-btn" class="btn btn-success">Start Game</button>
+    </h2>
+</div>
 
-    <div id = "container">
-      <div><p id="player0Name" style="position: absolute; top: 8%; left: 0.5%;font: bold 15px'Open Sans', sans-serif;color: white;"></p></div>
-      <table class = "track track0">
-        <tr class = "track0">
-          <td><img src="" class ="start"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td class="finish"><img src="" class="oneEnd cell empty"></td>
-        </tr>
-      </table>
-      <div><p id="player1Name" style="position: absolute; top: 21%; left: 0.5%;"></p></div>
-      <table class = "track track1">
-        <tr class = "track1">
-          <td><img src="" class="start"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td class="finish"><img src="" class="twoEnd cell empty"></td>
-        </tr>
-      </table>
-      <div><p id="player2Name" style="position: absolute; top: 34%; left: 0.5%;"></p></div>
-      <table class = "track track2 threeSetup">
-        <tr class = "track2">
-          <td><img src="" class="start"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td class="finish"><img src="" class="threeEnd cell empty"></td>
-        </tr>
-      </table>
-      <div><p id="player3Name" style="position: absolute; top: 47.5%; left: 0.5%;"></p></div>
-      <table class = "track track3 fourSetup">
-        <tr class = "track3">
-          <td><img src="" class="start"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td class="finish"><img src="" class="fourEnd cell empty"></td>
-        </tr>
-      </table>
-      <div><p id="player4Name" style="position: absolute; top: 61%; left: 0.5%;"></p></div>
-      <table class = "track track4 fiveSetup">
-        <tr class = "track4">
-          <td><img src="" class="start"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td class="finish"><img src="" class="fiveEnd cell empty"></td>
-        </tr>
-      </table>
-      <div><p id="player5Name"style="position: absolute; top: 74%; left: 0.5%;"></p></div>
-      <table class = "track track5 sixSetup">
-        <tr class = "track5">
-          <td><img src="" class="start"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td class="finish"><img src="" class="sixEnd cell empty"></td>
-        </tr>
-      </table>
-      <div><p id="player6Name" style="position: absolute; top: 87%; left: 0.5%;"></p></div>
-      <table class = "track track6 sevenSetup">
-        <tr class = "track6">
-          <td><img src="" class="start"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td><img src="" class="cell empty"></td>
-          <td><img src="" class="cell empty up"></td>
-          <td class="finish"><img src="" class="sevenEnd cell empty"></td>
-        </tr>
-      </table>
-      <div style="display:none;" id = "question-area">
-      <table style="font-family: 'Roboto', sans-serif; white-space:pre;word-wrap:break-word;">
-        <tr>
-          <td><h4 style="text-align: center;">Word:</h4><h2 id="questionWord" style="text-align: center;"></h2></td>
-        </tr>
-        <tr>
-          <td style="background-color: lightblue; height: 50px;"></td>
-        </tr>
-        <tr>
-          <td><textarea class="alternative altA" id="questionAlt1" readonly style="border: none"></textarea></td>
-        </tr>
-        <tr>
-          <td style="background-color: lightblue; height: 20px;"></td>
-        </tr>
-        <tr>
-          <td><textarea class="alternative altB" id="questionAlt2"readonly style="border: none"></textarea ></td>
-        </tr>
-        <tr>
-          <td style="background-color: lightblue; height: 20px;"></td>
-        </tr>
-        <tr>
-          <td><textarea class="alternative altC" id="questionAlt3"readonly style="border: none"></textarea ></td>
-        </tr>
+<div id="errorBox" style="display:none;">
+    <br/>
+    <h2 id="errorMessage"></h2>
+    <br/>
+</div>
 
-      </table>
-      </div>
-      <div id = "whoWon">
-        <div class="pyro">
-          <div class="before"></div>
-          <h1>To the Winners Circle!</h1></br>
-          <h1 id=winnerName></h1>
-          <div id="winPic"></div>
-          <h1>Congratulations!</h1>
-          <button type="button" class="btn btn-success reset">Play Again!</button>
-          <div class="after"></div>
+<div id="container">
+    <!-- template-track is cloned for each new player -->
+    <div class="track" id="template-track">
+        <div class="race-area">
+            <span class="player-name"></span>
+            <img class="horse" src="" alt="horse"/>
         </div>
-      </div>
+        <div class="finish-area">
+        </div>
     </div>
-  </body>
-  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+</div>
+
+<div style="display:none;" id="question-area">
+    <table style="font-family: 'Roboto', sans-serif; white-space:pre;word-wrap:break-word;">
+        <tr>
+            <td><h4 style="text-align: center;">Word:</h4>
+                <h2 id="questionWord" style="text-align: center;"></h2></td>
+        </tr>
+        <tr>
+            <td style="background-color: lightblue; height: 50px;"></td>
+        </tr>
+        <tr>
+            <td><textarea class="alternative altA" id="questionAlt1" readonly style="border: none"></textarea></td>
+        </tr>
+        <tr>
+            <td style="background-color: lightblue; height: 20px;"></td>
+        </tr>
+        <tr>
+            <td><textarea class="alternative altB" id="questionAlt2" readonly style="border: none"></textarea></td>
+        </tr>
+        <tr>
+            <td style="background-color: lightblue; height: 20px;"></td>
+        </tr>
+        <tr>
+            <td><textarea class="alternative altC" id="questionAlt3" readonly style="border: none"></textarea></td>
+        </tr>
+
+    </table>
+</div>
+
+<div id="whoWon">
+    <div class="pyro">
+        <div class="before"></div>
+        <h1>To the Winners Circle!</h1></br>
+        <h1 id=winnerName></h1>
+        <div id="winPic"></div>
+        <h1>Congratulations!</h1>
+        <button type="button" class="btn btn-success reset">Play Again!</button>
+        <div class="after"></div>
+    </div>
+</div>
+
+</body>
 </html>

@@ -1,4 +1,4 @@
-$(document).on("ready", function () {
+$(document).ready(function () {
     $('#whoWon').hide();
     $('#countDownBox').hide();
 
@@ -10,16 +10,16 @@ $(document).on("ready", function () {
         $('.horse-selected').removeClass('horse-selected'); // removes the previous selected class
         $(this).addClass('horse-selected'); // adds the class to the clicked image
     });
-    // todo: submit answer directly when clicking on an option
+
     $('.alternative').click(function () {
         $('.alt-selected').removeClass('alt-selected'); // removes the previous selected class
         $(this).addClass('alt-selected'); // adds the class to the clicked image
     });
 
-// Initializes game with players' chosen preferences
-    $('.submit').on('click', function (e) {
-        if (!document.getElementById("nameEntryOne").value || $('.horse-selected')[0].id == undefined){
-          return
+    // Initialises game with players' chosen preferences
+    $('.submit').on('click', function () {
+        if (!document.getElementById("nameEntryOne").value || $('.horse-selected')[0].id == undefined) {
+            return
         }
 
         $('#selections').hide();
@@ -34,13 +34,12 @@ $(document).on("ready", function () {
         $('#startGameBox').show()
     });
 
-    $('#start-game-btn').on('click', function(e){
+    $('#start-game-btn').on('click', function (e) {
         $.get("http://ec2-52-63-119-7.ap-southeast-2.compute.amazonaws.com:8080/start", function() {
-          console.log( "game started" );
+            console.log("game started");
         });
         $('#startGameBox').hide()
     });
-
 
     $('.alternative').on('click', function (e) {
         let selected = $('.alt-selected').attr('id');
@@ -60,9 +59,7 @@ $(document).on("ready", function () {
             }
         };
         connection.send(JSON.stringify(message));
-        // todo: instead of hiding, server will give feedback of right/wrong -> change colour
-        // $('#question-area').hide()
-        $('.alternative').css("pointer-events","none")
+        $('.alternative').css("pointer-events", "none")
     });
 
 });
@@ -74,13 +71,13 @@ function displayWinner(win, pic) {
     $('#whoWon').show();
     victory.play();
     victory.currentTime = 0;
-        
+
     $('#winnerName').text(win);
     $('#winPic').html("<img src=" + pic + ">");
 }
 
 function gameReset() {
-  window.location.reload(true);
+    window.location.reload(true);
 }
 
 //Variables to initialize
@@ -91,7 +88,7 @@ var victory = new Audio('./victory.mp3');
 
 window.WebSocket = window.WebSocket || window.MozWebSocket;
 
-var connection = new WebSocket('ws://'+ API_IP + '/game');
+var connection = new WebSocket('ws://' + API_IP + '/game');
 
 connection.onerror = function (error) {
     console.log(error);
@@ -102,17 +99,27 @@ var showCountdown = function () {
     $('#countDownBox').show();
     snd.play();
     snd.currentTime = 0;
-        
-    setTimeout(function() {$('#num').text("3");}, 500);
-    setTimeout(function() {$('#num').text("2");}, 1500);
-    setTimeout(function() {$('#num').text("1");}, 2500);
-    setTimeout(function() {$('#num').text("Go!");}, 3500);
-    setTimeout(function() {$('#countDownBox').hide();}, 4000);
+
+    setTimeout(function () {
+        $('#num').text("3");
+    }, 500);
+    setTimeout(function () {
+        $('#num').text("2");
+    }, 1500);
+    setTimeout(function () {
+        $('#num').text("1");
+    }, 2500);
+    setTimeout(function () {
+        $('#num').text("Go!");
+    }, 3500);
+    setTimeout(function () {
+        $('#countDownBox').hide();
+    }, 4000);
 };
 
 var showQuestion = function (question) {
     $('#question-area').show()
-    $('.alternative').css("pointer-events","auto")
+    $('.alternative').css("pointer-events", "auto")
     $('.alternative').css('background-color', 'white');
 
     $('#questionWord').text(question.WordToGuess);
@@ -127,28 +134,44 @@ var updateGame = function (summary) {
     for (let i = 0; i < summary.PlayerStates.length; i++) {
         const player = summary.PlayerStates[i];
         const name = player.Name;
-        const active = player.Active;  // todo: use this to represent a disconnected player mid-game
-        const horse = player.Icon;
 
-        const track = $('table.track' + i);
-
-        // Display player name
-        $('#player' + i + 'Name').text(name);
-
-        // Display the player's chosen horse
-        if (active) {
-            track.children().children().children().children('img').attr('src', 'images/' + horse + '.png');
-        } else {
-            track.children().children().children().children('img').attr('src', 'images/dead.png');
+        let horseIcon = player.Icon;
+        if (!player.Active) {
+            horseIcon = "dead"
         }
-        
+
+        let track = $('#track' + i)
+
+        // Create a new track if this is a new player
+        if (track.length === 0) {
+            track = $('#template-track')
+                .clone()
+                .appendTo('#container')
+                .attr('id', 'track' + i)
+                .css('display', 'flex')
+
+            track.find('img')
+                .attr('id', 'horse' + i)
+
+            track.find('span')
+                .attr('id', 'player' + i)
+        }
+
+        // Set the player name
+        const playerSpan = $('#player' + i)
+        playerSpan.text(name);
+
+        // Set the horse icon
+        const horse = $("#horse" + i)
+        horse.attr('src', 'images/' + horseIcon + '.png')
+
+        // Set the horse position
         const targetPoints = 500;
-        const maxPosition = 60;
+        const maxPosition = 100;
         let position = Math.floor(player.Score / targetPoints * maxPosition);
         position = Math.min(position, maxPosition);
 
-        track.children().children().children().children('img').addClass('empty');
-        track.children().children().children().children('img').eq(position).removeClass('empty');
+        horse.animate({left: position + "%"}, "slow");
     }
 };
 
@@ -157,14 +180,14 @@ var endGame = function (summary) {
     displayWinner(summary.Winner, "images/" + summary.Icon + ".png")
 };
 
-var showError = function(message) {
+var showError = function (message) {
     $('#errorBox').show()
     $('#errorMessage').text(message.Message)
 }
 
-var showResult = function(correct) {
-    if (correct){
-        $('.alt-selected').css('background-color',   'green')
+var showResult = function (correct) {
+    if (correct) {
+        $('.alt-selected').css('background-color', 'green')
     } else {
         $('.alt-selected').css('background-color', 'red')
     }
