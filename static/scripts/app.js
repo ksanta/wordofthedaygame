@@ -2,7 +2,7 @@ $(document).ready(function () {
     $('#whoWon').hide();
     $('#countDownBox').hide();
 
-    $('.reset').on('click', function (e) {
+    $('.reset').click(function () {
         window.location.reload(true);
     });
 
@@ -11,9 +11,17 @@ $(document).ready(function () {
         $(this).addClass('horse-selected'); // adds the class to the clicked image
     });
 
-    $('.alternative').click(function () {
-        $('.alt-selected').removeClass('alt-selected'); // removes the previous selected class
+    $('.definition').click(function () {
         $(this).addClass('alt-selected'); // adds the class to the clicked image
+
+        const response = $(this).data('option').toString()
+        let message = {
+            PlayerResponse: {
+                Response: response
+            }
+        };
+        connection.send(JSON.stringify(message));
+        $('.definition').css("pointer-events", "none")
     });
 
     // Initialises game with players' chosen preferences
@@ -35,33 +43,11 @@ $(document).ready(function () {
     });
 
     $('#start-game-btn').on('click', function (e) {
-        $.get("http://ec2-52-63-119-7.ap-southeast-2.compute.amazonaws.com:8080/start", function() {
+        $.get("http://localhost:8080/start", function() {
             console.log("game started");
         });
         $('#startGameBox').hide()
     });
-
-    $('.alternative').on('click', function (e) {
-        let selected = $('.alt-selected').attr('id');
-        let response = 0;
-
-        if (selected === "questionAlt1") {
-            response = "1"
-        } else if (selected === "questionAlt2") {
-            response = "2"
-        } else if (selected === "questionAlt3") {
-            response = "3"
-        }
-
-        let message = {
-            PlayerResponse: {
-                Response: response
-            }
-        };
-        connection.send(JSON.stringify(message));
-        $('.alternative').css("pointer-events", "none")
-    });
-
 });
 //End of document onReady
 
@@ -76,12 +62,8 @@ function displayWinner(win, pic) {
     $('#winPic').html("<img src=" + pic + ">");
 }
 
-function gameReset() {
-    window.location.reload(true);
-}
-
 //Variables to initialize
-const API_IP = "52.63.119.7:8080";
+const API_IP = "localhost:8080";
 
 var snd = new Audio('./bugle.wav');
 var victory = new Audio('./victory.mp3');
@@ -118,14 +100,16 @@ var showCountdown = function () {
 };
 
 var showQuestion = function (question) {
-    $('#question-area').show()
-    $('.alternative').css("pointer-events", "auto")
-    $('.alternative').css('background-color', 'white');
+    let definitions = $('.definition')
+    definitions.removeClass('alt-selected'); // removes the previous selected class
+    definitions.css('background-color', 'white')
+    definitions.css('pointer-events', 'auto')
 
     $('#questionWord').text(question.WordToGuess);
     $('#questionAlt1').text("1: " + question.Definitions[0]);
     $('#questionAlt2').text("2: " + question.Definitions[1]);
     $('#questionAlt3').text("3: " + question.Definitions[2]);
+
     $('#question-area').show();
 };
 
