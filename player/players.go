@@ -34,7 +34,7 @@ func (players Players) ForActivePlayers(funcToDo func(p *Player)) {
 
 // PlayerWithHighestPoints returns the player with the maximum points. They may not have actually won yet.
 func (players Players) PlayerWithHighestPoints() *Player {
-	maxScore := 0
+	maxScore := -1
 	var winner *Player
 
 	for _, p := range players {

@@ -164,7 +164,6 @@ func (game *Game) PlayGame() {
 			break
 		}
 
-		// todo: still getting occasional nil pointer deference errors
 		maxScore = game.players.PlayerWithHighestPoints().GetPoints()
 		time.Sleep(2 * time.Second) // Give the players time to prepare for the next round
 	}
