@@ -105,10 +105,10 @@ var showQuestion = function (question) {
     definitions.css('background-color', 'white')
     definitions.css('pointer-events', 'auto')
 
-    $('#questionWord').text(question.WordToGuess);
-    $('#questionAlt1').text("1: " + question.Definitions[0]);
-    $('#questionAlt2').text("2: " + question.Definitions[1]);
-    $('#questionAlt3').text("3: " + question.Definitions[2]);
+    $('#word-to-guess').text(question.WordToGuess);
+    $('#definition1').text("1: " + question.Definitions[0]);
+    $('#definition2').text("2: " + question.Definitions[1]);
+    $('#definition3').text("3: " + question.Definitions[2]);
 
     $('#question-area').show();
 };
@@ -130,7 +130,7 @@ var updateGame = function (summary) {
         if (track.length === 0) {
             track = $('#template-track')
                 .clone()
-                .appendTo('#container')
+                .appendTo('#tracks')
                 .attr('id', 'track' + i)
                 .css('display', 'flex')
 

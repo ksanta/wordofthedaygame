@@ -6,7 +6,8 @@
     <!-- Custom fonts -->
     <link href='https://fonts.googleapis.com/css?family=Sancreek' rel='stylesheet' type='text/css'>
     <!-- Bootstrap CDN -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <!-- Custom CSS -->
     <link rel="stylesheet" type="text/css" href="styles/styles.css">
     <!-- jQuery -->
@@ -69,43 +70,27 @@
 </div>
 
 <div id="container">
-    <!-- template-track is cloned for each new player -->
-    <div class="track" id="template-track">
-        <div class="race-area">
-            <span class="player-name"></span>
-            <img class="horse" src="" alt="horse"/>
+    <div class="row">
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div id="question-area">
+                <h2 id="word-to-guess"></h2>
+                <div class="definition" id="definition1" data-option="1"></div>
+                <div class="definition" id="definition2" data-option="2"></div>
+                <div class="definition" id="definition3" data-option="3"></div>
+            </div>
         </div>
-        <div class="finish-area">
+        <div class="col-lg-9 col-md-8 col-sm-6" id="tracks">
+            <!-- template-track is cloned for each new player -->
+            <div class="track" id="template-track">
+                <div class="race-area">
+                    <span class="player-name"></span>
+                    <img class="horse" src="" alt="horse"/>
+                </div>
+                <div class="finish-area">
+                </div>
+            </div>
         </div>
     </div>
-</div>
-
-<div style="display:none;" id="question-area">
-    <table style="font-family: 'Roboto', sans-serif; white-space:pre;word-wrap:break-word;">
-        <tr>
-            <td><h4 style="text-align: center;">Word:</h4>
-                <h2 id="questionWord" style="text-align: center;"></h2></td>
-        </tr>
-        <tr>
-            <td style="background-color: lightblue; height: 50px;"></td>
-        </tr>
-        <tr>
-            <td><textarea class="definition" id="questionAlt1" data-option="1" readonly></textarea></td>
-        </tr>
-        <tr>
-            <td style="background-color: lightblue; height: 20px;"></td>
-        </tr>
-        <tr>
-            <td><textarea class="definition" id="questionAlt2" data-option="2" readonly></textarea></td>
-        </tr>
-        <tr>
-            <td style="background-color: lightblue; height: 20px;"></td>
-        </tr>
-        <tr>
-            <td><textarea class="definition" id="questionAlt3" data-option="3" readonly></textarea></td>
-        </tr>
-
-    </table>
 </div>
 
 <div id="whoWon">
