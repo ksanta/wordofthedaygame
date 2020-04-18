@@ -5,8 +5,6 @@ import (
 	"github.com/ksanta/wordofthedaygame/player"
 	"log"
 	"math/rand"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
@@ -157,7 +155,7 @@ func (game *Game) PlayGame() {
 	game.AlertPlayersGameWillBegin()
 
 	maxScore := 0
-	for maxScore <= game.TargetScore {
+	for maxScore < game.TargetScore {
 		game.playRound()
 
 		if game.players.AllInactive() {
@@ -249,7 +247,7 @@ func (game *Game) sendRoundSummaryToEachPlayer() {
 	game.players.ForActivePlayers(sendRoundSummary)
 }
 
-func (game *Game) handlePlayerResponse(p *player.Player, response string) {
+func (game *Game) handlePlayerResponse(p *player.Player, response int) {
 	if !p.WaitingForResponse {
 		// Reject multiple responses from the player
 		return
@@ -265,8 +263,9 @@ func (game *Game) handlePlayerResponse(p *player.Player, response string) {
 	// Immediately send the result to the player
 	p.SendToClientChan <- model.MessageToPlayer{
 		PlayerResult: &model.PlayerResult{
-			Correct: correct,
-			Points:  points,
+			Correct:       correct,
+			Points:        points,
+			CorrectAnswer: game.correctAnswer(),
 		},
 	}
 
@@ -275,23 +274,27 @@ func (game *Game) handlePlayerResponse(p *player.Player, response string) {
 	p.WaitingForResponse = false
 }
 
-// validateResponse returns true if the response is correct
-func (game *Game) validateResponse(response string) bool {
-	// If the response doesn't convert to an integer, it's wrong
-	responseNum, err := strconv.Atoi(strings.TrimSpace(response))
-	if err != nil {
-		return false
+// correctAnswer returns the correct answer as a 0-based index
+func (game *Game) correctAnswer() int {
+	for i, word := range game.wordsInRound {
+		if word.Word == game.wordToGuess {
+			return i
+		}
 	}
 
-	index := responseNum - 1
+	// This should never happen
+	panic("Could not find the correct answer!")
+}
 
+// validateResponse returns true if the response is correct
+func (game *Game) validateResponse(wordIndex int) bool {
 	// If the response is out of range, it's wrong
-	if index < 0 || index >= len(game.wordsInRound) {
+	if wordIndex < 0 || wordIndex >= len(game.wordsInRound) {
 		return false
 	}
 
 	// Compare the response to the correct answer
-	return game.wordsInRound[index].Word == game.wordToGuess
+	return game.wordsInRound[wordIndex].Word == game.wordToGuess
 }
 
 func (game *Game) calculatePoints(correct bool, elapsedTime time.Duration) int {

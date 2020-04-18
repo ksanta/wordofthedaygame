@@ -1,3 +1,8 @@
+const API_IP = location.host;
+
+var snd = new Audio('./bugle.wav');
+var victory = new Audio('./victory.mp3');
+
 $(document).ready(function () {
     $('#whoWon').hide();
     $('#countDownBox').hide();
@@ -14,7 +19,7 @@ $(document).ready(function () {
     $('.definition').click(function () {
         $(this).addClass('alt-selected'); // adds the class to the clicked image
 
-        const response = $(this).data('option').toString()
+        const response = $(this).data('option')
         let message = {
             PlayerResponse: {
                 Response: response
@@ -43,7 +48,7 @@ $(document).ready(function () {
     });
 
     $('#start-game-btn').on('click', function (e) {
-        $.get("http://localhost:8080/start", function() {
+        $.get("http://" + API_IP + "/start", function () {
             console.log("game started");
         });
         $('#startGameBox').hide()
@@ -63,13 +68,7 @@ function displayWinner(win, pic) {
 }
 
 //Variables to initialize
-const API_IP = "localhost:8080";
-
-var snd = new Audio('./bugle.wav');
-var victory = new Audio('./victory.mp3');
-
 window.WebSocket = window.WebSocket || window.MozWebSocket;
-
 var connection = new WebSocket('ws://' + API_IP + '/game');
 
 connection.onerror = function (error) {
@@ -106,9 +105,9 @@ var showQuestion = function (question) {
     definitions.css('pointer-events', 'auto')
 
     $('#word-to-guess').text(question.WordToGuess);
-    $('#definition1').text("1: " + question.Definitions[0]);
-    $('#definition2').text("2: " + question.Definitions[1]);
-    $('#definition3').text("3: " + question.Definitions[2]);
+    $('#definition0').text(question.Definitions[0]);
+    $('#definition1').text(question.Definitions[1]);
+    $('#definition2').text(question.Definitions[2]);
 
     $('#question-area').show();
 };
@@ -169,10 +168,14 @@ var showError = function (message) {
     $('#errorMessage').text(message.Message)
 }
 
-var showResult = function (correct) {
-    if (correct) {
-        $('.alt-selected').css('background-color', 'green')
-    } else {
+// showResult lets the player know which answer was correct
+var showResult = function (playerResult) {
+    // Make the correct answer green
+    $('.definition[data-option=' + playerResult.CorrectAnswer + ']')
+        .css('background-color', 'green')
+
+    // If the player guessed wrong, make the selected definition red
+    if (!playerResult.Correct) {
         $('.alt-selected').css('background-color', 'red')
     }
 }
@@ -201,7 +204,7 @@ connection.onmessage = function (wsMessage) {
             endGame(data.Summary)
 
         } else if (data.hasOwnProperty('PlayerResult')) {
-            showResult(data.PlayerResult.Correct)
+            showResult(data.PlayerResult)
         }
 
     } catch (e) {
