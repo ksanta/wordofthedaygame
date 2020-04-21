@@ -10,19 +10,21 @@ import (
 )
 
 type Game struct {
-	WordsByType         map[string]model.Words
+	WordsByType map[string]model.Words
+	// Game rules
 	TargetScore         int
 	OptionsPerQuestion  int
 	DurationPerQuestion time.Duration
 	MaxPlayerCount      int
-	MessageChan         chan player.PlayerMessage
-	StartChan           chan struct{}
-	players             player.Players
-	waitGroup           sync.WaitGroup
-	wordsInRound        model.Words
-	wordToGuess         string
-	gameInProgress      bool
-	waitingForAnswers   bool
+	// Communication
+	MessageChan chan player.PlayerMessage
+	StartChan   chan struct{}
+	// Fields to track game in progress
+	players           player.Players
+	waitGroup         sync.WaitGroup
+	correctAnswer     int
+	gameInProgress    bool
+	waitingForAnswers bool
 }
 
 func NewGame(wordsByType map[string]model.Words,
@@ -43,8 +45,7 @@ func NewGame(wordsByType map[string]model.Words,
 		StartChan:         make(chan struct{}, 1),
 		players:           make([]*player.Player, 0, 10),
 		waitGroup:         sync.WaitGroup{},
-		wordsInRound:      nil,
-		wordToGuess:       "",
+		correctAnswer:     -1,
 		gameInProgress:    false,
 		waitingForAnswers: false,
 	}
@@ -200,19 +201,16 @@ func (game *Game) sendGameSummaryToPlayers() {
 
 func (game *Game) sendQuestionToEachPlayer() {
 	wordType := model.PickRandomType()
-
-	game.wordsInRound = game.WordsByType[wordType].PickRandomWords(game.OptionsPerQuestion)
-	game.wordToGuess = game.wordsInRound.PickRandomWord().Word
-
-	definitions := game.wordsInRound.GetDefinitions()
+	wordsInThisRound := game.WordsByType[wordType].PickRandomWords(game.OptionsPerQuestion)
+	game.correctAnswer = wordsInThisRound.PickRandomIndex()
 
 	// Wait group keeps track of how many responses to wait for
 	game.waitGroup.Add(game.players.NumActivePlayers())
 
 	questionMsg := model.MessageToPlayer{
 		PresentQuestion: &model.PresentQuestion{
-			WordToGuess:    game.wordToGuess,
-			Definitions:    definitions,
+			WordToGuess:    wordsInThisRound[game.correctAnswer].Word,
+			Definitions:    wordsInThisRound.GetDefinitions(),
 			SecondsAllowed: int(game.DurationPerQuestion.Seconds()),
 		},
 	}
@@ -253,10 +251,8 @@ func (game *Game) handlePlayerResponse(p *player.Player, response int) {
 		return
 	}
 
+	correct := response == game.correctAnswer
 	elapsedTime := p.StopTimer()
-
-	correct := game.validateResponse(response)
-
 	points := game.calculatePoints(correct, elapsedTime)
 	p.AddPoints(points)
 
@@ -265,36 +261,13 @@ func (game *Game) handlePlayerResponse(p *player.Player, response int) {
 		PlayerResult: &model.PlayerResult{
 			Correct:       correct,
 			Points:        points,
-			CorrectAnswer: game.correctAnswer(),
+			CorrectAnswer: game.correctAnswer,
 		},
 	}
 
 	game.waitGroup.Done()
 
 	p.WaitingForResponse = false
-}
-
-// correctAnswer returns the correct answer as a 0-based index
-func (game *Game) correctAnswer() int {
-	for i, word := range game.wordsInRound {
-		if word.Word == game.wordToGuess {
-			return i
-		}
-	}
-
-	// This should never happen
-	panic("Could not find the correct answer!")
-}
-
-// validateResponse returns true if the response is correct
-func (game *Game) validateResponse(wordIndex int) bool {
-	// If the response is out of range, it's wrong
-	if wordIndex < 0 || wordIndex >= len(game.wordsInRound) {
-		return false
-	}
-
-	// Compare the response to the correct answer
-	return game.wordsInRound[wordIndex].Word == game.wordToGuess
 }
 
 func (game *Game) calculatePoints(correct bool, elapsedTime time.Duration) int {

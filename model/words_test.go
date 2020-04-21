@@ -21,15 +21,6 @@ func TestWords_PickRandomType(t *testing.T) {
 	}
 }
 
-func TestWords_PickRandomWord(t *testing.T) {
-	rand.Seed(1)
-	got := sampleWords.PickRandomWord().Word
-	expected := "two"
-	if got != expected {
-		t.Errorf("Got %s and expected %s", got, expected)
-	}
-}
-
 func TestWords_PickRandomWords_NoWords(t *testing.T) {
 	rand.Seed(1)
 

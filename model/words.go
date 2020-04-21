@@ -27,26 +27,26 @@ func (words Words) GroupByType() map[string]Words {
 // happens to pick the same word twice, it will re-pick until a unique word is picked.
 func (words Words) PickRandomWords(numberToChoose int) Words {
 	// Limit the odd case if there just isn't enough words to choose from
-	if numberToChoose > len(words) {
-		numberToChoose = len(words)
+	if numberToChoose >= len(words) {
+		return words
 	}
 
-	randomWords := make(Words, 0, numberToChoose)
-	alreadyPickedWords := make(map[string]interface{})
+	chosenWords := make(Words, 0, numberToChoose)
+	pickedIndexes := make(map[int]interface{})
 
-	for len(randomWords) < numberToChoose {
-		word := words.PickRandomWord()
-		if _, alreadyPicked := alreadyPickedWords[word.Word]; !alreadyPicked {
-			randomWords = append(randomWords, word)
-			alreadyPickedWords[word.Word] = struct{}{}
+	for len(chosenWords) < numberToChoose {
+		index := words.PickRandomIndex()
+		if _, present := pickedIndexes[index]; !present {
+			chosenWords = append(chosenWords, words[index])
+			pickedIndexes[index] = struct{}{}
 		}
 	}
 
-	return randomWords
+	return chosenWords
 }
 
-func (words Words) PickRandomWord() Word {
-	return words[rand.Intn(len(words))]
+func (words Words) PickRandomIndex() int {
+	return rand.Intn(len(words))
 }
 
 func (words Words) GetDefinitions() []string {
